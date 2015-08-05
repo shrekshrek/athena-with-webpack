@@ -1,0 +1,9 @@
+#@name@-page{
+    top: 0px;
+    left: 0px;
+}
+
+#@name@-page h1{
+    position: absolute;
+    top: 50px;
+}

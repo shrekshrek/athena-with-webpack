@@ -1,0 +1,88 @@
+/*
+ * -----------------------------------------全局设置
+ */
+ul, li {
+    list-style: none;
+    line-height: 0px;
+}
+body, div, ul, li, img, p, a, h1, h2, h3 {
+    margin: 0px;
+    padding: 0px;
+    border: 0px;
+}
+html, body {
+    background: #f7f7f7;
+    color: #141212;
+    font-family: "微软雅黑", "黑体", "宋体", Helvetica, Verdana, sans-serif;
+    font-size: 12px;
+}
+
+a:link {
+    color: #999;
+    text-decoration: none;
+}
+a:active {
+    color: #999;
+}
+a:visited {
+    color: #999;
+}
+a:hover {
+    color: #fff;
+}
+
+
+/*
+ * -----------------------------------------页面
+ */
+.page {
+    position: absolute;
+}
+
+
+/*
+ * -----------------------------------------弹出框
+ */
+.pop {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+}
+.pop .pop-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    opacity: 0.4;
+}
+.pop .close {
+    cursor: pointer;
+}
+
+
+/*
+ * -----------------------------------------滚动条
+ */
+.scroll-bar {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 16px;
+}
+.scroll-bar .scroll-box {
+    position: absolute;
+    top: 0px;
+    width: 16px;
+    background: #000000;
+    cursor: pointer;
+}
+.scroll-bar .scroll-bg {
+    position: absolute;
+    top: 0px;
+    width: 2px;
+    margin: 0 0 0 7px;
+    background: #000000;
+}
+

@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<site>
+	<preloader id="preloader0" depth="preload" ready="true"/>
+	<preloader id="preloader" depth="preload"/>
+	<header id="header" depth="top-1"/>
+	<footer id="footer" depth="top-2"/>
+	<page id="home" />
+	<page id="work" />
+	<pop id="tip1" depth="top" fast="true"/>
+</site>

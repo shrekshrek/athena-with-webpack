@@ -1,0 +1,23 @@
+#@name@{
+    top:0px;
+    height: 30px;
+    line-height: 30px;
+    background: #aaa;
+    text-align: center;
+}
+#@name@ ul{
+    display:block;
+    width: 150px;
+    margin:auto;
+}
+#@name@ li{
+    display:block;
+    float:left;
+    width:50px;
+    height:10px;
+    line-height:10px;
+    cursor:pointer;
+}
+#@name@ li:hover{
+    color:#f00;
+}
