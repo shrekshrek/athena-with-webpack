@@ -9,10 +9,10 @@ var SiteRouter = require('router');
 $(function() {
     Athena.init();
     Athena.fullScreen(true);
-    Athena.windowRectMin({
-        width : 1000,
-        height : 600
-    });
+    //Athena.windowRectMin({
+    //    width : 1000,
+    //    height : 600
+    //});
     Athena.flow(Athena.NORMAL);
     Athena.preloadFast(false);
 
