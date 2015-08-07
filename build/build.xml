@@ -36,7 +36,7 @@
 		<antcall target="!clean-built" />
 		<delete dir="${js}" />
 		<delete dir="${css}" />
-		<delete dir="${images}" />
+		<!--<delete dir="${images}" />-->
 		<delete file="${indexPath}/index.html" />
 		<delete file="${indexPath}/webpack.config.js" />
 	</target>
