@@ -71,9 +71,9 @@
 			<copy toDir="${sitePath}css/" overwrite="false" encoding="UTF-8">
 				<fileset dir="${www}css/" />
 			</copy>
-			<copy toDir="${sitePath}images/" overwrite="false" encoding="UTF-8">
-				<fileset dir="${www}images/" />
-			</copy>
+			<!--<copy toDir="${sitePath}images/" overwrite="false" encoding="UTF-8">-->
+				<!--<fileset dir="${www}images/" />-->
+			<!--</copy>-->
 		</sequential>
 	</macrodef>
 
