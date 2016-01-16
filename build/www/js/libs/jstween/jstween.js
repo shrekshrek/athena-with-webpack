@@ -1,32 +1,17 @@
 /*!
- * VERSION: 0.1.0
- * DATE: 2015-07-09
+ * VERSION: 0.4.0
+ * DATE: 2016-1-16
  * GIT:https://github.com/shrekshrek/jstween
  *
  * @author: Shrek.wang, shrekshrek@gmail.com
  **/
 
-(function(){
-    if ("performance" in window == false) {
-        window.performance = {};
-    }
-    Date.now = (Date.now || function () {  // thanks IE8
-        return new Date().getTime();
-    });
-    if ("now" in window.performance == false){
-        var nowOffset = Date.now();
-        window.performance.now = function now(){
-            return Date.now() - nowOffset;
-        }
-    }
-})();
-
-(function(factory) {
+(function (factory) {
     var root = (typeof self == 'object' && self.self == self && self) ||
         (typeof global == 'object' && global.global == global && global);
 
     if (typeof define === 'function' && define.amd) {
-        define(['exports'], function(exports) {
+        define(['exports'], function (exports) {
             root.JT = factory(root, exports);
         });
     } else if (typeof exports !== 'undefined') {
@@ -35,74 +20,54 @@
         root.JT = factory(root, {});
     }
 
-}(function(root, JT) {
-    var previousJsTween = root.JT;
-
-    JT.VERSION = '0.1.0';
-
-    JT.noConflict = function() {
-        root.JT = previousJsTween;
-        return this;
-    };
-
+}(function (root, JT) {
     // --------------------------------------------------------------------辅助方法
-    var extend = function(obj){
-        var length = arguments.length;
-        if (length < 2 || obj == null) return obj;
-        for (var index = 1; index < length; index++) {
-            var source = arguments[index],
-                ks = keys(source),
-                l = ks.length;
-            for (var i = 0; i < l; i++) {
-                var key = ks[i];
-                obj[key] = source[key];
-            }
+    function extend(obj, obj2) {
+        for (var prop in obj2) {
+            obj[prop] = obj2[prop];
         }
-        return obj;
-    };
-
-    var keys = function(obj){
-        var keys = [];
-        for(var key in obj){
-            keys.push(key);
-        }
-        return keys;
-    };
+    }
 
     function each(obj, callback) {
-        if(obj.length === undefined){
+        if (typeof(obj) === 'function') {
             callback.call(obj, 0, obj);
-        }else{
-            for (var i = 0; i < obj.length; i++){
+        } else if (obj.length === undefined) {
+            callback.call(obj, 0, obj);
+        } else {
+            for (var i = 0; i < obj.length; i++) {
                 callback.call(obj[i], i, obj[i]);
             }
         }
     }
 
     //  WebkitTransform 转 -webkit-transform
-    function hyphenize(str){
+    function hyphenize(str) {
         return str.replace(/([A-Z])/g, "-$1").toLowerCase();
     }
 
     //  webkitTransform 转 WebkitTransform
-    function firstUper(str){
-        return str.replace(/\b(\w)|\s(\w)/g, function(m){
+    function firstUper(str) {
+        return str.replace(/\b(\w)|\s(\w)/g, function (m) {
             return m.toUpperCase();
         });
     }
 
-    // --------------------------------------------------------------------prefix
-    var requestFrame = window.requestAnimationFrame ||
-        window.webkitRequestAnimationFrame ||
-        window.mozRequestAnimationFrame ||
-        window.oRequestAnimationFrame ||
-        window.msRequestAnimationFrame ||
-        function (callback) { window.setTimeout(callback, 1000 / 60); };
 
+    // --------------------------------------------------------------------time fix
+    var nowOffset = Date.now();
+
+    var now = function () {
+        return Date.now() - nowOffset;
+    };
+
+
+    // --------------------------------------------------------------------prefix
     var prefix = '';
-    (function (){
-        var _prefixes = ['webkit', 'moz', 'ms', 'o'];
+
+    (function () {
         var _d = document.createElement('div');
+        var _prefixes = ['Webkit', 'Moz', 'Ms', 'O'];
+
         for (var i in _prefixes) {
             if ((_prefixes[i] + 'Transform') in _d.style) {
                 prefix = _prefixes[i];
@@ -111,9 +76,7 @@
         }
     }());
 
-    JT.requestAnimationFrame = requestFrame;
-
-    function browserPrefix(str){
+    function browserPrefix(str) {
         if (str) {
             return prefix + firstUper(str);
         } else {
@@ -121,153 +84,179 @@
         }
     }
 
+    var requestFrame = window.requestAnimationFrame ||
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        window.oRequestAnimationFrame ||
+        window.msRequestAnimationFrame;
+
 
     // --------------------------------------------------------------------dom style相关方法
-    function getElement(target){
-        if(!target) throw "target is undefined, can't tween!!!";
+    function getElement(target) {
+        if (!target) throw "target is undefined, can't tween!!!";
 
-        if(typeof(target) == 'string'){
+        if (typeof(target) == 'string') {
             return (typeof(document) === 'undefined') ? target : (document.querySelectorAll ? document.querySelectorAll(target) : document.getElementById((target.charAt(0) === '#') ? target.substr(1) : target));
-        }else{
+        } else {
             return target;
         }
     }
 
-    function checkDomProp(dom, name){
-        if(dom.style[name] !== undefined){
-            return name;
-        }
+    function checkPropName(target, name) {
+        if (target._jt_obj[name] !== undefined) return name;
+
+        if (target.style[name] !== undefined) return name;
 
         name = browserPrefix(name);
-        if(dom.style[name] !== undefined){
-            return name;
-        }
+        if (target.style[name] !== undefined) return name;
 
-        return null;
+        return undefined;
     }
 
-    function checkValue(value, value2){
-        if(typeof(value2) === "string"){
-            return value + parseFloat(value2);
-        }else if(typeof(value2) === "number"){
-            return value2;
+    function calcValue(value, value2) {
+        if (typeof(value2) === 'string') {
+            var _s = value2.substr(0, 2);
+            var _n = parseFloat(value2.substr(2));
+            switch (_s) {
+                case '+=':
+                    value2 = value + _n;
+                    break;
+                case '-=':
+                    value2 = value - _n;
+                    break;
+            }
+        }
+        return value2;
+    }
+
+    function checkCssValue(name, value) {
+        switch (name) {
+            case 'opacity':
+            case 'fontWeight':
+            case 'lineHeight':
+            case 'zoom':
+                return value;
+            default:
+                //return Math.round(value) + 'px';
+                return typeof(value) === 'number' ? Math.round(value) + 'px' : value;
+                break;
         }
     }
 
-    function getStyleValue(dom, param){
-        if(dom.style[param]){
-            return dom.style[param];
-        }else if(document.defaultView && document.defaultView.getComputedStyle){
-            var _p = hyphenize(param);
-            var _s = document.defaultView.getComputedStyle(dom,'');
+    function checkJtobj(target){
+        if (target._jt_obj == undefined)
+            target._jt_obj = {x:0, y:0, z:0, rotationX:0, rotationY:0, rotationZ:0, scaleX:1, scaleY:1, scaleZ:1};
+    }
+
+    function getProp(target, name) {
+        switch(name){
+            case 'x':
+            case 'y':
+            case 'z':
+            case 'rotationX':
+            case 'rotationY':
+            case 'rotationZ':
+            case 'scaleX':
+            case 'scaleY':
+            case 'scaleZ':
+                return target._jt_obj[name];
+            default:
+                return getStyle(target, name);
+        }
+    }
+
+    function getStyle(target, name) {
+        if (document.defaultView && document.defaultView.getComputedStyle) {
+            var _p = hyphenize(name);
+            var _s = document.defaultView.getComputedStyle(target, '');
             return _s && _s.getPropertyValue(_p);
-        }else if(dom.currentStyle){
-            return dom.currentStyle[param];
-        }else{
+        } else if (target.currentStyle) {
+            return target.currentStyle[name];
+        } else {
             return null;
         }
     }
 
-    function setStyleValue(dom, params){
-        for(var i in params){
-            dom.style[i] = checkNumberValue(i, params[i]);
+    function setProp(target, name, value) {
+        switch(name){
+            case 'x':
+            case 'y':
+            case 'z':
+            case 'rotationX':
+            case 'rotationY':
+            case 'rotationZ':
+            case 'scaleX':
+            case 'scaleY':
+            case 'scaleZ':
+                target._jt_obj[name] = value;
+                return true;
+            default:
+                setStyle(target, name, value);
+                return false;
         }
     }
 
-    var numberNames = ['fontWeight','lineHeight','opacity','zoom'];
-    function checkNumberValue(name, value){
-        for(var i in numberNames){
-            if(name === numberNames[i]){
-                return value;
-            }
-        }
-        return typeof(value) === 'number'?value + 'px':value;
+    function setStyle(target, name, value) {
+        target.style[name] = checkCssValue(name, value);
     }
 
-    //var isDOM = (typeof HTMLElement === 'object')?
-    //    function(obj){
-    //        return obj instanceof HTMLElement;
-    //    }:
-    //    function(obj){
-    //        return obj && typeof obj === 'object' && obj.nodeType === 1 && typeof obj.nodeName === 'string';
-    //    };
-
-    function isDOM(obj){
-        return obj.style !== undefined;
+    function isDOM(obj) {
+        return typeof(obj) === 'object' && obj.nodeType === 1;
     }
 
 
-    // --------------------------------------------------------------------主体
-    var globalTweens = [];
+    // --------------------------------------------------------------------全局update
+    var tweens = [];
     var isUpdating = false;
 
     function globalUpdate() {
         isUpdating = true;
-        var _len = globalTweens.length;
-        if ( _len === 0 ) {
+        var _len = tweens.length, i;
+        var _len2 = calls.length, j;
+        if (_len === 0 && _len2 === 0) {
             isUpdating = false;
             return;
         }
 
-        var _time = window.performance.now();
-        for(var i = _len-1; i >= 0; i--){
-            if ( !globalTweens[i].update( _time ) ) {
-                var _tween = globalTweens.splice(i, 1)[0];
-                if(_tween.onEnd) _tween.onEnd.apply(_tween.target, _tween.onEndParams);
+        var _time = now();
+        for (i = _len - 1; i >= 0; i--) {
+            if (tweens[i] && !tweens[i]._update(_time)) {
+                var _tween = tweens.splice(i, 1)[0];
+                if (_tween.onUpdate) _tween.onUpdate.apply(_tween, _tween.onUpdateParams);
+                if (_tween.onEnd) _tween.onEnd.apply(_tween, _tween.onEndParams);
                 _tween.target = null;
+            }
+        }
+        for (j = _len2 - 1; j >= 0; j--) {
+            if (calls[j] && !calls[j]._update(_time)) {
+                var _call = calls.splice(j, 1)[0];
+                if (_call.onEnd) _call.onEnd.apply(_call, _call.onEndParams);
             }
         }
 
         requestFrame(globalUpdate);
     }
 
-    //function checkUnique(tween){
-    //    var _len = globalTweens.length;
-    //    var i, j, k;
-    //    for(i = _len-1; i >= 0; i--){
-    //        if(tween.target == globalTweens[i].target){
-    //            var k1 = keys(tween.fromVars);
-    //            var k2 = keys(globalTweens[i].fromVars);
-    //            var isSame = true;
-    //            if(k1.length == k2.length){
-    //                for(j in k1){
-    //                    if(k1[j] != k2[j]){
-    //                        isSame = false;
-    //                        break;
-    //                    }
-    //                }
-    //            }
-    //            if(!isSame) continue;
-    //
-    //            var _tween = globalTweens.splice(i, 1)[0];
-    //            _tween.update(window.performance.now());
-    //            for(k in tween.fromVars){
-    //                tween.fromVars[k] = parseFloat(_tween.isDom ? getStyleValue(_tween.target, k) : _tween.target[k]);
-    //            }
-    //            _tween.target = null;
-    //            break;
-    //        }
-    //    }
-    //}
-
-    function tween(){
-        this.init.apply(this, arguments);
+    // --------------------------------------------------------------------tween
+    function tween() {
+        this.initialize.apply(this, arguments);
     }
 
     extend(tween.prototype, {
-        init: function(target, time, fromVars, toVars, isDom){
+        initialize: function (target, time, fromVars, toVars, isDom) {
             this.fromVars = fromVars;
             this.toVars = toVars;
             this.target = target;
-            this.duration = time * 1000;
+            this.duration = Math.max(time, 0) * 1000;
             this.ease = toVars.ease || JT.Linear.None;
-            this.repeat = toVars.repeat || 1;
+            this.delay = Math.max(toVars.delay || 0, 0) * 1000;
             this.yoyo = toVars.yoyo || false;
-            this.delay = (toVars.delay || 0) * 1000;
+            this.repeat = this.curRepeat = Math.floor(toVars.repeat || 0);
+            this.repeatDelay = Math.max(toVars.repeatDelay || 0, 0) * 1000;
             this.onStart = toVars.onStart || null;
             this.onStartParams = toVars.onStartParams || [];
-            this.onIteration = toVars.onIteration || null;
-            this.onIterationParams = toVars.onIterationParams || [];
+            this.onRepeat = toVars.onRepeat || null;
+            this.onRepeatParams = toVars.onRepeatParams || [];
             this.onEnd = toVars.onEnd || null;
             this.onEndParams = toVars.onEndParams || [];
             this.onUpdate = toVars.onUpdate || null;
@@ -278,162 +267,175 @@
             this.isDom = isDom;
 
             this.curTime = 0;
-            this.lastTime = window.performance.now();
+            this.lastTime = now();
             this.isStart = false;
             this.startTime = this.delay;
-            this.endTime = this.startTime + this.duration;
+            this.endTime = this.startTime + this.repeatDelay + this.duration;
 
-            this.restart();
-            //checkUnique(this);
-            globalTweens.unshift(this);
+            if(this.delay != 0){
+                this._updateProp();
+                if (this.onUpdate) this.onUpdate.apply(this, this.onUpdateParams);
+            }
 
-            if(!isUpdating)
-                globalUpdate();
+            tweens.unshift(this);
+            if (!isUpdating) globalUpdate();
+            else this._update(this.lastTime);
         },
-        update: function(time){
+        _update: function (time) {
             var _time = time - this.lastTime;
             this.lastTime = time;
 
-            if(!this.isPlaying)
-                return true;
+            if (!this.isPlaying) return true;
 
             this.curTime += _time;
 
-            if(this.curTime < this.startTime)
-                return true;
+            if (this.curTime < this.startTime) return true;
 
-            if(!this.isStart){
+            if (!this.isStart) {
                 this.isStart = true;
-                if(this.onStart) this.onStart.apply(this.target, this.onStartParams);
+                if (this.onStart) this.onStart.apply(this, this.onStartParams);
             }
 
-            var _elapsed = (this.curTime - this.startTime)/this.duration;
-            _elapsed = _elapsed > 1 ? 1 : _elapsed;
+            if (this.curTime < this.startTime + this.repeatDelay) return true;
 
-            if(this.isReverse)
-                _elapsed = 1 - _elapsed;
-
-            var _radio = parseFloat(this.ease(_elapsed));
-
-            for(var prop in this.fromVars){
-                var _start = this.fromVars[prop];
-                var _end = this.toVars[prop] || 0;
-
-                var _n = _start + ( _end - _start ) * _radio;
-                if(this.isDom){
-                    this.target.style[prop] = checkNumberValue(prop, _n);
-                }else{
-                    this.target[prop] = _n;
-                }
-            }
-
-            if(this.onUpdate) this.onUpdate.apply(this.target, this.onUpdateParams);
-
-            if(this.curTime >= this.endTime){
-                if(this.repeat == 1){
+            if (this.curTime < this.endTime){
+                this._updateProp();
+                if (this.onUpdate) this.onUpdate.apply(this, this.onUpdateParams);
+            }else{
+                if (this.curRepeat == 0){
+                    this._updateProp();
                     return false;
-                }else if(this.repeat > 1){
-                    if(this.onIteration) this.onIteration.apply(this.target, this.onIterationParams);
-                    this.repeat--;
                 }
 
-                this.curTime = this.startTime;
+                if (this.yoyo) this.isReverse = !this.isReverse;
 
-                if(this.yoyo){
-                    this.isReverse = !this.isReverse;
+                if(this.repeatDelay == 0){
+                    this.curTime = this.curTime - this.duration - this.repeatDelay;
+                    this._updateProp();
+                }else{
+                    this._updateProp();
+                    this.curTime = this.curTime - this.duration - this.repeatDelay;
                 }
+
+                if (this.onUpdate) this.onUpdate.apply(this, this.onUpdateParams);
+                if (this.onRepeat) this.onRepeat.apply(this, this.onRepeatParams);
+                if (this.curRepeat > 0) this.curRepeat--;
             }
 
             return true;
         },
-        play: function(){
-            this.isPlaying = true;
-        },
-        pause: function(){
-            this.isPlaying = false;
-        },
-        restart: function(){
-            this.curTime = 0;
-            for(var prop in this.fromVars){
-                var _n = this.fromVars[prop];
-                if(this.isDom){
-                    this.target.style[prop] = checkNumberValue(prop, _n);
-                }else{
+
+        _updateProp: function () {
+            var _elapsed = this.duration == 0 ? 1 : ((this.curTime - this.startTime - this.repeatDelay) / this.duration);
+            _elapsed = Math.max(0, Math.min(1, _elapsed));
+
+            if (this.isReverse) _elapsed = 1 - _elapsed;
+
+            var _radio = this.ease(_elapsed);
+
+            var _trans = false;
+
+            for (var prop in this.fromVars) {
+                var _start = this.fromVars[prop];
+                var _end = this.toVars[prop] || 0;
+
+                var _n = _start + ( _end - _start ) * _radio;
+                _n = Math.round(_n * 100) / 100;
+
+                if (this.isDom){
+                    if(setProp(this.target, prop, _n)) _trans = true;
+                } else {
                     this.target[prop] = _n;
                 }
             }
+
+            if (_trans)
+                this.target.style[browserPrefix('transform')] = 'translate3d(' + this.target._jt_obj.x + 'px,' + this.target._jt_obj.y + 'px,' + this.target._jt_obj.z + 'px) ' + 'rotateX(' + this.target._jt_obj.rotationX % 360 + 'deg) ' + 'rotateY(' + this.target._jt_obj.rotationY % 360 + 'deg) ' + 'rotateZ(' + this.target._jt_obj.rotationZ % 360 + 'deg) ' + 'scale3d(' + this.target._jt_obj.scaleX + ', ' + this.target._jt_obj.scaleY + ', ' + this.target._jt_obj.scaleZ + ') ';
+
         },
-        reverse: function(){
-            this.curTime = this.endTime - this.curTime + this.startTime;
-            this.isReverse = !this.isReverse;
+
+        play: function () {
+            if (!this.target) return;
+
+            this.isPlaying = true;
         },
-        kill: function(toEnd){
-            var i = globalTweens.indexOf(this);
+
+        pause: function () {
+            if (!this.target) return;
+
+            this.isPlaying = false;
+        },
+
+        destroy: function (toEnd) {
+            if (!this.target) return;
+
+            var i = tweens.indexOf(this);
             if (i !== -1) {
-                if(toEnd){
-                    var _tween = globalTweens.splice(i, 1)[0];
-                    _tween.update(_tween.endTime - _tween.curTime + _tween.lastTime);
-                    if(_tween.onEnd) _tween.onEnd.apply(_tween.target, _tween.onEndParams);
-                    _tween.target = null;
-                }else{
-                    var _tween = globalTweens.splice(i, 1)[0];
-                    _tween.update(window.performance.now());
-                    _tween.target = null;
-                }
+                var _tween = tweens.splice(i, 1)[0];
+                if (toEnd && _tween.onEnd) _tween.onEnd.apply(_tween, _tween.onEndParams);
+                this.target = null;
             }
         }
     });
 
-    // --------------------------------------------------------------------主要方法
+
+    // --------------------------------------------------------------------tween 全局方法
     extend(JT, {
-        get: function(target, param){
+        get: function (target, param) {
             var _target = getElement(target);
-            if(_target.length !== undefined){
+            if (_target.length !== undefined) {
                 _target = _target[0];
             }
-            if(isDOM(_target)){
-                var _name = checkDomProp(_target, param);
-                if(_name)
-                    return getStyleValue(_target, _name);
-                else
-                    return null;
-            }else{
+            if (isDOM(_target)) {
+                checkJtobj(_target);
+                var _name = checkPropName(_target, param);
+                if (_name) return getProp(_target, _name);
+                else return null;
+            } else {
                 return _target[param];
             }
         },
 
-        set: function(target, params){
+        set: function (target, params) {
             var _target = getElement(target);
-            each(_target, function(index, obj){
-                if(isDOM(obj)){
-                    var _params = {};
-                    for(var j in params){
-                        var _name = checkDomProp(obj, j);
-                        if(_name) _params[_name] = params[j];
+            each(_target, function (index, obj) {
+                if (isDOM(obj)) {
+                    checkJtobj(obj);
+                    var _trans = false;
+                    for (var i in params) {
+                        var _name = checkPropName(obj, i);
+                        if (_name) {
+                            var _value = calcValue(parseFloat(getProp(obj, _name)), params[i]);
+                            if(setProp(obj, _name, _value)) _trans = true;
+                        }
                     }
-                    setStyleValue(obj, _params);
-                }else{
-                    for(var j in params){
-                        obj[j] = params[j];
+
+                    if(_trans)
+                        obj.style[browserPrefix('transform')] = 'translate3d(' + obj._jt_obj.x + 'px,' + obj._jt_obj.y + 'px,' + obj._jt_obj.z + 'px) ' + 'rotateX(' + obj._jt_obj.rotationX % 360 + 'deg) ' + 'rotateY(' + obj._jt_obj.rotationY % 360 + 'deg) ' + 'rotateZ(' + obj._jt_obj.rotationZ % 360 + 'deg) ' + 'scale3d(' + obj._jt_obj.scaleX + ', ' + obj._jt_obj.scaleY + ', ' + obj._jt_obj.scaleZ + ') ';
+
+                } else {
+                    for (var j in params) {
+                        obj[j] = calcValue(obj[j], params[j]);
                     }
                 }
             });
         },
 
-        fromTo: function(target, time, fromVars, toVars){
+        fromTo: function (target, time, fromVars, toVars) {
             var _target = getElement(target);
             var _tweens = [];
-            each(_target, function(index, obj){
+            each(_target, function (index, obj) {
                 var _fromVars = {};
                 var _toVars = {};
                 var _isDom = isDOM(obj);
+                if (_isDom) checkJtobj(obj);
 
-                for(var j in toVars){
-                    if(_isDom ? (obj.style[j] !== undefined) : (obj[j] !== undefined)){
-                        var _n = parseFloat(_isDom ? getStyleValue(obj, j) : obj[j]);
-                        _fromVars[j] = checkValue(_n, fromVars[j]);
-                        _toVars[j] = checkValue(_n, toVars[j]);
-                    }else{
+                for (var j in toVars) {
+                    if (_isDom ? (checkPropName(obj, j) !== undefined) : (obj[j] !== undefined)) {
+                        var _n = _isDom ? parseFloat(getProp(obj, j)) : obj[j];
+                        _fromVars[j] = calcValue(_n, fromVars[j]);
+                        _toVars[j] = calcValue(_n, toVars[j]);
+                    } else {
                         _toVars[j] = toVars[j];
                     }
                 }
@@ -442,27 +444,28 @@
                 _tweens.push(_tween);
             });
 
-            if(_tweens.length == 1){
+            if (_tweens.length == 1) {
                 return _tweens[0];
-            }else{
+            } else {
                 return _tweens;
             }
         },
 
-        from: function(target, time, fromVars){
+        from: function (target, time, fromVars) {
             var _target = getElement(target);
             var _tweens = [];
-            each(_target, function(index, obj){
+            each(_target, function (index, obj) {
                 var _fromVars = {};
                 var _toVars = {};
                 var _isDom = isDOM(obj);
+                if (_isDom) checkJtobj(obj);
 
-                for(var j in fromVars){
-                    if(_isDom ? (obj.style[j] !== undefined) : (obj[j] !== undefined)){
-                        var _n = parseFloat(_isDom ? getStyleValue(obj, j) : obj[j]);
+                for (var j in fromVars) {
+                    if (_isDom ? (checkPropName(obj, j) !== undefined) : (obj[j] !== undefined)) {
+                        var _n = _isDom ? parseFloat(getProp(obj, j)) : obj[j];
                         _toVars[j] = _n;
-                        _fromVars[j] = checkValue(_n, fromVars[j]);
-                    }else{
+                        _fromVars[j] = calcValue(_n, fromVars[j]);
+                    } else {
                         _toVars[j] = fromVars[j];
                     }
                 }
@@ -471,27 +474,28 @@
                 _tweens.push(_tween);
             });
 
-            if(_tweens.length == 1){
+            if (_tweens.length == 1) {
                 return _tweens[0];
-            }else{
+            } else {
                 return _tweens;
             }
         },
 
-        to: function(target, time, toVars){
+        to: function (target, time, toVars) {
             var _target = getElement(target);
             var _tweens = [];
-            each(_target, function(index, obj){
+            each(_target, function (index, obj) {
                 var _fromVars = {};
                 var _toVars = {};
                 var _isDom = isDOM(obj);
+                if (_isDom) checkJtobj(obj);
 
-                for(var j in toVars){
-                    if(_isDom ? (obj.style[j] !== undefined) : (obj[j] !== undefined)){
-                        var _n = parseFloat(_isDom ? getStyleValue(obj, j) : obj[j]);
+                for (var j in toVars) {
+                    if (_isDom ? (checkPropName(obj, j) !== undefined) : (obj[j] !== undefined)) {
+                        var _n = _isDom ? parseFloat(getProp(obj, j)) : obj[j];
                         _fromVars[j] = _n;
-                        _toVars[j] = checkValue(_n, toVars[j]);
-                    }else{
+                        _toVars[j] = calcValue(_n, toVars[j]);
+                    } else {
                         _toVars[j] = toVars[j];
                     }
                 }
@@ -500,248 +504,372 @@
                 _tweens.push(_tween);
             });
 
-            if(_tweens.length == 1){
+            if (_tweens.length == 1) {
                 return _tweens[0];
-            }else{
+            } else {
                 return _tweens;
             }
         },
 
-        kill: function(target, toEnd){
+        kill: function (target, toEnd) {
             var _target = getElement(target);
-            var _len = globalTweens.length;
-            each(_target, function(index, obj){
-                for(var i = _len-1; i >= 0; i--){
-                    var _tween = globalTweens[i];
-                    if(_tween.target === obj){
-                        _tween.kill(toEnd);
+            each(_target, function (index, obj) {
+                var _len = tweens.length;
+                for (var i = _len - 1; i >= 0; i--) {
+                    var _tween = tweens[i];
+                    if (_tween.target === obj) {
+                        //_tween.kill(toEnd);
+                        tweens.splice(i, 1);
+                        if (toEnd && _tween.onEnd) _tween.onEnd.apply(_tween, _tween.onEndParams);
+                        _tween.target = null;
                     }
                 }
             });
         },
 
-        killAll: function(toEnd){
-            if(!toEnd){
-                globalTweens = [];
+        killAll: function (toEnd) {
+            if (!toEnd) {
+                tweens = [];
                 return;
             }
 
-            var _len = globalTweens.length;
-            for(var i = _len-1; i >= 0; i--){
-                var _tween = globalTweens[i];
-                _tween.kill(toEnd);
+            var _len = tweens.length;
+            for (var i = _len - 1; i >= 0; i--) {
+                var _tween = tweens.splice(i, 1);
+                if (toEnd && _tween.onEnd) _tween.onEnd.apply(_tween, _tween.onEndParams);
+                _tween.target = null;
             }
         },
 
-        play: function(target){
-            actionProxy(target, 'play');
+        play: function (target) {
+            actionProxyTween(target, 'play');
         },
 
-        playAll: function(){
-            actionProxyAll('play');
+        playAll: function () {
+            actionProxyAllTweens('play');
         },
 
-        pause: function(target){
-            actionProxy(target, 'pause');
+        pause: function (target) {
+            actionProxyTween(target, 'pause');
         },
 
-        pauseAll: function(){
-            actionProxyAll('pause');
-        },
-
-        restart: function(target){
-            actionProxy(target, 'restart');
-        },
-
-        restartAll: function(){
-            actionProxyAll('restart');
-        },
-
-        reverse: function(target){
-            actionProxy(target, 'reverse');
-        },
-
-        reverseAll: function(){
-            actionProxyAll('reverse');
+        pauseAll: function () {
+            actionProxyAllTweens('pause');
         }
+
     });
 
-    function actionProxy(target, action){
+    function actionProxyTween(target, action) {
         var _target = getElement(target);
-        var _len = globalTweens.length;
-        each(_target, function(index, obj){
-            for(var i = _len-1; i >= 0; i--){
-                var _tween = globalTweens[i];
-                if(_tween.target === obj){
+        var _len = tweens.length;
+        each(_target, function (index, obj) {
+            for (var i = _len - 1; i >= 0; i--) {
+                var _tween = tweens[i];
+                if (_tween.target === obj) {
                     _tween[action]();
                 }
             }
         });
     }
 
-    function actionProxyAll(action){
-        var _len = globalTweens.length;
-        for(var i = _len-1; i >= 0; i--){
-            var _tween = globalTweens[i];
+    function actionProxyAllTweens(action) {
+        var _len = tweens.length;
+        for (var i = _len - 1; i >= 0; i--) {
+            var _tween = tweens[i];
             _tween[action]();
+        }
+    }
+
+
+    // --------------------------------------------------------------------call
+    var calls = [];
+
+    function call() {
+        this.initialize.apply(this, arguments);
+    }
+
+    extend(call.prototype, {
+        initialize: function (time, callback, params, isPlaying) {
+            this.delay = time * 1000;
+            this.onEnd = callback || null;
+            this.onEndParams = params || [];
+
+            this.curTime = 0;
+            this.lastTime = now();
+            this.endTime = this.delay;
+            this.isPlaying = isPlaying || true;
+
+            calls.unshift(this);
+            if (!isUpdating) globalUpdate();
+            else this._update(this.lastTime);
+        },
+        _update: function (time) {
+            var _time = time - this.lastTime;
+            this.lastTime = time;
+
+            if (!this.isPlaying) return true;
+
+            this.curTime += _time;
+
+            if (this.curTime < this.endTime) return true;
+
+            return false;
+        },
+        play: function () {
+            this.isPlaying = true;
+        },
+        pause: function () {
+            this.isPlaying = false;
+        },
+        destroy: function (toEnd) {
+            var i = calls.indexOf(this);
+            if (i !== -1) {
+                var _call = calls.splice(i, 1)[0];
+                if (toEnd && _call.onEnd) _call.onEnd.apply(_call, _call.onEndParams);
+            }
+        }
+    });
+
+
+    //---------------------------------------------------------------call 全局方法
+    extend(JT, {
+        call: function (time, callback, params) {
+            return new call(time, callback, params);
+        },
+
+        killCall: function (callback, toEnd) {
+            var _target = callback;
+            var _len = calls.length;
+            each(_target, function (index, obj) {
+                for (var i = _len - 1; i >= 0; i--) {
+                    var _call = calls[i];
+                    if (_call.onEnd === obj) {
+                        //_call.kill(toEnd);
+                        calls.splice(i, 1);
+                        if (toEnd && _call.onEnd) _call.onEnd.apply(_call, _call.onEndParams);
+                    }
+                }
+            });
+        },
+
+        killAllCalls: function (toEnd) {
+            if (!toEnd) {
+                calls = [];
+                return;
+            }
+
+            var _len = calls.length;
+            for (var i = _len - 1; i >= 0; i--) {
+                var _call = calls.splice(i, 1);
+                if (toEnd && _call.onEnd) _call.onEnd.apply(_call, _call.onEndParams);
+            }
+        },
+
+        playCall: function (callback) {
+            actionProxyCall(callback, 'play');
+        },
+
+        playAllCalls: function () {
+            actionProxyAllCalls('play');
+        },
+
+        pauseCall: function (callback) {
+            actionProxyCall(callback, 'pause');
+        },
+
+        pauseAllCalls: function () {
+            actionProxyAllCalls('pause');
+        }
+
+    });
+
+    function actionProxyCall(callback, action) {
+        var _target = callback;
+        var _len = calls.length;
+        each(_target, function (index, obj) {
+            for (var i = _len - 1; i >= 0; i--) {
+                var _call = calls[i];
+                if (_call.onEnd === obj) {
+                    _call[action]();
+                }
+            }
+        });
+    }
+
+    function actionProxyAllCalls(action) {
+        var _len = calls.length;
+        for (var i = _len - 1; i >= 0; i--) {
+            var _call = calls[i];
+            _call[action]();
         }
     }
 
     // --------------------------------------------------------------------缓动选项
     extend(JT, {
         Linear: {
-            None: function ( k ) {
+            None: function (k) {
                 return k;
             }
         },
         Quad: {
-            In: function ( k ) {
+            In: function (k) {
                 return k * k;
             },
-            Out: function ( k ) {
+            Out: function (k) {
                 return k * ( 2 - k );
             },
-            InOut: function ( k ) {
-                if ( ( k *= 2 ) < 1 ) return 0.5 * k * k;
-                return - 0.5 * ( --k * ( k - 2 ) - 1 );
+            InOut: function (k) {
+                if (( k *= 2 ) < 1) return 0.5 * k * k;
+                return -0.5 * ( --k * ( k - 2 ) - 1 );
             }
         },
         Cubic: {
-            In: function ( k ) {
+            In: function (k) {
                 return k * k * k;
             },
-            Out: function ( k ) {
+            Out: function (k) {
                 return --k * k * k + 1;
             },
-            InOut: function ( k ) {
-                if ( ( k *= 2 ) < 1 ) return 0.5 * k * k * k;
+            InOut: function (k) {
+                if (( k *= 2 ) < 1) return 0.5 * k * k * k;
                 return 0.5 * ( ( k -= 2 ) * k * k + 2 );
             }
         },
         Quart: {
-            In: function ( k ) {
+            In: function (k) {
                 return k * k * k * k;
             },
-            Out: function ( k ) {
+            Out: function (k) {
                 return 1 - ( --k * k * k * k );
             },
-            InOut: function ( k ) {
-                if ( ( k *= 2 ) < 1) return 0.5 * k * k * k * k;
-                return - 0.5 * ( ( k -= 2 ) * k * k * k - 2 );
+            InOut: function (k) {
+                if (( k *= 2 ) < 1) return 0.5 * k * k * k * k;
+                return -0.5 * ( ( k -= 2 ) * k * k * k - 2 );
             }
         },
         Quint: {
-            In: function ( k ) {
+            In: function (k) {
                 return k * k * k * k * k;
             },
-            Out: function ( k ) {
+            Out: function (k) {
                 return --k * k * k * k * k + 1;
             },
-            InOut: function ( k ) {
-                if ( ( k *= 2 ) < 1 ) return 0.5 * k * k * k * k * k;
+            InOut: function (k) {
+                if (( k *= 2 ) < 1) return 0.5 * k * k * k * k * k;
                 return 0.5 * ( ( k -= 2 ) * k * k * k * k + 2 );
             }
         },
         Sine: {
-            In: function ( k ) {
-                return 1 - Math.cos( k * Math.PI / 2 );
+            In: function (k) {
+                return 1 - Math.cos(k * Math.PI / 2);
             },
-            Out: function ( k ) {
-                return Math.sin( k * Math.PI / 2 );
+            Out: function (k) {
+                return Math.sin(k * Math.PI / 2);
             },
-            InOut: function ( k ) {
-                return 0.5 * ( 1 - Math.cos( Math.PI * k ) );
+            InOut: function (k) {
+                return 0.5 * ( 1 - Math.cos(Math.PI * k) );
             }
         },
         Expo: {
-            In: function ( k ) {
-                return k === 0 ? 0 : Math.pow( 1024, k - 1 );
+            In: function (k) {
+                return k === 0 ? 0 : Math.pow(1024, k - 1);
             },
-            Out: function ( k ) {
-                return k === 1 ? 1 : 1 - Math.pow( 2, - 10 * k );
+            Out: function (k) {
+                return k === 1 ? 1 : 1 - Math.pow(2, -10 * k);
             },
-            InOut: function ( k ) {
-                if ( k === 0 ) return 0;
-                if ( k === 1 ) return 1;
-                if ( ( k *= 2 ) < 1 ) return 0.5 * Math.pow( 1024, k - 1 );
-                return 0.5 * ( - Math.pow( 2, - 10 * ( k - 1 ) ) + 2 );
+            InOut: function (k) {
+                if (k === 0) return 0;
+                if (k === 1) return 1;
+                if (( k *= 2 ) < 1) return 0.5 * Math.pow(1024, k - 1);
+                return 0.5 * ( -Math.pow(2, -10 * ( k - 1 )) + 2 );
             }
         },
         Circ: {
-            In: function ( k ) {
-                return 1 - Math.sqrt( 1 - k * k );
+            In: function (k) {
+                return 1 - Math.sqrt(1 - k * k);
             },
-            Out: function ( k ) {
-                return Math.sqrt( 1 - ( --k * k ) );
+            Out: function (k) {
+                return Math.sqrt(1 - ( --k * k ));
             },
-            InOut: function ( k ) {
-                if ( ( k *= 2 ) < 1) return - 0.5 * ( Math.sqrt( 1 - k * k) - 1);
-                return 0.5 * ( Math.sqrt( 1 - ( k -= 2) * k) + 1);
+            InOut: function (k) {
+                if (( k *= 2 ) < 1) return -0.5 * ( Math.sqrt(1 - k * k) - 1);
+                return 0.5 * ( Math.sqrt(1 - ( k -= 2) * k) + 1);
             }
         },
         Elastic: {
-            In: function ( k ) {
+            In: function (k) {
                 var s, a = 0.1, p = 0.4;
-                if ( k === 0 ) return 0;
-                if ( k === 1 ) return 1;
-                if ( !a || a < 1 ) { a = 1; s = p / 4; }
-                else s = p * Math.asin( 1 / a ) / ( 2 * Math.PI );
-                return - ( a * Math.pow( 2, 10 * ( k -= 1 ) ) * Math.sin( ( k - s ) * ( 2 * Math.PI ) / p ) );
+                if (k === 0) return 0;
+                if (k === 1) return 1;
+                if (!a || a < 1) {
+                    a = 1;
+                    s = p / 4;
+                }
+                else s = p * Math.asin(1 / a) / ( 2 * Math.PI );
+                return -( a * Math.pow(2, 10 * ( k -= 1 )) * Math.sin(( k - s ) * ( 2 * Math.PI ) / p) );
             },
-            Out: function ( k ) {
+            Out: function (k) {
                 var s, a = 0.1, p = 0.4;
-                if ( k === 0 ) return 0;
-                if ( k === 1 ) return 1;
-                if ( !a || a < 1 ) { a = 1; s = p / 4; }
-                else s = p * Math.asin( 1 / a ) / ( 2 * Math.PI );
-                return ( a * Math.pow( 2, - 10 * k) * Math.sin( ( k - s ) * ( 2 * Math.PI ) / p ) + 1 );
+                if (k === 0) return 0;
+                if (k === 1) return 1;
+                if (!a || a < 1) {
+                    a = 1;
+                    s = p / 4;
+                }
+                else s = p * Math.asin(1 / a) / ( 2 * Math.PI );
+                return ( a * Math.pow(2, -10 * k) * Math.sin(( k - s ) * ( 2 * Math.PI ) / p) + 1 );
             },
-            InOut: function ( k ) {
+            InOut: function (k) {
                 var s, a = 0.1, p = 0.4;
-                if ( k === 0 ) return 0;
-                if ( k === 1 ) return 1;
-                if ( !a || a < 1 ) { a = 1; s = p / 4; }
-                else s = p * Math.asin( 1 / a ) / ( 2 * Math.PI );
-                if ( ( k *= 2 ) < 1 ) return - 0.5 * ( a * Math.pow( 2, 10 * ( k -= 1 ) ) * Math.sin( ( k - s ) * ( 2 * Math.PI ) / p ) );
-                return a * Math.pow( 2, -10 * ( k -= 1 ) ) * Math.sin( ( k - s ) * ( 2 * Math.PI ) / p ) * 0.5 + 1;
+                if (k === 0) return 0;
+                if (k === 1) return 1;
+                if (!a || a < 1) {
+                    a = 1;
+                    s = p / 4;
+                }
+                else s = p * Math.asin(1 / a) / ( 2 * Math.PI );
+                if (( k *= 2 ) < 1) return -0.5 * ( a * Math.pow(2, 10 * ( k -= 1 )) * Math.sin(( k - s ) * ( 2 * Math.PI ) / p) );
+                return a * Math.pow(2, -10 * ( k -= 1 )) * Math.sin(( k - s ) * ( 2 * Math.PI ) / p) * 0.5 + 1;
             }
         },
         Back: {
-            In: function ( k ) {
+            In: function (k) {
                 var s = 1.70158;
                 return k * k * ( ( s + 1 ) * k - s );
             },
-            Out: function ( k ) {
+            Out: function (k) {
                 var s = 1.70158;
                 return --k * k * ( ( s + 1 ) * k + s ) + 1;
             },
-            InOut: function ( k ) {
+            InOut: function (k) {
                 var s = 1.70158 * 1.525;
-                if ( ( k *= 2 ) < 1 ) return 0.5 * ( k * k * ( ( s + 1 ) * k - s ) );
+                if (( k *= 2 ) < 1) return 0.5 * ( k * k * ( ( s + 1 ) * k - s ) );
                 return 0.5 * ( ( k -= 2 ) * k * ( ( s + 1 ) * k + s ) + 2 );
             }
         },
         Bounce: {
-            In: function ( k ) {
-                return 1 - TWEEN.Easing.Bounce.Out( 1 - k );
+            In: function (k) {
+                return 1 - JT.Bounce.Out(1 - k);
             },
-            Out: function ( k ) {
-                if ( k < ( 1 / 2.75 ) ) {
+            Out: function (k) {
+                if (k < ( 1 / 2.75 )) {
                     return 7.5625 * k * k;
-                } else if ( k < ( 2 / 2.75 ) ) {
+                } else if (k < ( 2 / 2.75 )) {
                     return 7.5625 * ( k -= ( 1.5 / 2.75 ) ) * k + 0.75;
-                } else if ( k < ( 2.5 / 2.75 ) ) {
+                } else if (k < ( 2.5 / 2.75 )) {
                     return 7.5625 * ( k -= ( 2.25 / 2.75 ) ) * k + 0.9375;
                 } else {
                     return 7.5625 * ( k -= ( 2.625 / 2.75 ) ) * k + 0.984375;
                 }
             },
-            InOut: function ( k ) {
-                if ( k < 0.5 ) return TWEEN.Easing.Bounce.In( k * 2 ) * 0.5;
-                return TWEEN.Easing.Bounce.Out( k * 2 - 1 ) * 0.5 + 0.5;
+            InOut: function (k) {
+                if (k < 0.5) return JT.Bounce.In(k * 2) * 0.5;
+                return JT.Bounce.Out(k * 2 - 1) * 0.5 + 0.5;
             }
         }
     });
+
+    JT.now = now;
 
     return JT;
 }));
