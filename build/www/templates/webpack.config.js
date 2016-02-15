@@ -24,18 +24,18 @@ module.exports = {
             router: 'app/base/router.js',
             fixloader: 'app/base/fixloader.js',
 
-            athena: 'libs/athena/Athena.js',
-            jquery: 'libs/jquery/jquery-2.1.3.min.js',
-            //jquery: 'libs/zepto/zepto.min.js',
+            athena: 'libs/athena/athena.js',
+            //jquery: 'libs/jquery/jquery-2.1.3.min.js',
+            jquery: 'libs/zepto/zepto.min.js',
             bone: 'libs/bone/bone.min.js',
             jstween: 'libs/jstween/jstween.min.js',
             csstween: 'libs/csstween/csstween.min.js',
-            css3d: 'libs/css3d/css3d.js',
+            css3d: 'libs/css3d/css3d.min.js',
             json: 'libs/json/json2.min.js'
         }
     },
     externals: {
-        //jquery: '$'
+        jquery: '$'
     },
     module: {
         loaders: [
@@ -48,7 +48,16 @@ module.exports = {
     },
     plugins: [
         new webpack.ProvidePlugin({
-            $: 'jquery'
+            $: 'jquery',
+            Bone: 'bone',
+            Athena: 'athena',
+            JT: 'jstween',
+            CT: 'csstween',
+            C3D: 'css3d',
+            Map: 'map',
+            Model: 'model',
+            Router: 'router',
+
         })
     ]
 };

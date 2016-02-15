@@ -2,9 +2,9 @@
 require('athena');
 require('jstween');
 
-var SiteMap = require('map');
-var SiteModel = require('model');
-var SiteRouter = require('router');
+require('map');
+require('model');
+require('router');
 
 $(function() {
     Athena.init();
@@ -27,14 +27,14 @@ $(function() {
     //有默认loading时使用一下代码
     Athena.once(Athena.PRELOAD_PREPARE, init);
     Athena.preloader({
-        data : SiteMap.preloader0,
+        data : Map.preloader0,
         el : $("#preloader0")
     });
 
 
     function init() {
 
-        SiteModel.init();
+        Model.init();
 
         Bone.history.start({});
     }

@@ -144,7 +144,7 @@
 										</replacetokens>
 									</filterchain>
 								</copy>
-								<copy file="${templates}preloader/preloader.css" tofile="${app}preloader/@{id}.css" overwrite="false" encoding="UTF-8">
+								<copy file="${templates}preloader/preloader.less" tofile="${app}preloader/@{id}.less" overwrite="false" encoding="UTF-8">
 									<filterchain>
 										<replacetokens>
 											<token key="name" value="@{id}" />
@@ -175,7 +175,7 @@
 								</replacetokens>
 							</filterchain>
 						</copy>
-						<copy file="${templates}headfoot/header.css" tofile="${app}headfoot/@{id}.css" overwrite="false" encoding="UTF-8">
+						<copy file="${templates}headfoot/header.less" tofile="${app}headfoot/@{id}.less" overwrite="false" encoding="UTF-8">
 							<filterchain>
 								<replacetokens>
 									<token key="name" value="@{id}" />
@@ -204,7 +204,7 @@
 								</replacetokens>
 							</filterchain>
 						</copy>
-						<copy file="${templates}headfoot/footer.css" tofile="${app}headfoot/@{id}.css" overwrite="false" encoding="UTF-8">
+						<copy file="${templates}headfoot/footer.less" tofile="${app}headfoot/@{id}.less" overwrite="false" encoding="UTF-8">
 							<filterchain>
 								<replacetokens>
 									<token key="name" value="@{id}" />
@@ -233,7 +233,7 @@
 								</replacetokens>
 							</filterchain>
 						</copy>
-						<copy file="${templates}pages/page.css" tofile="${app}pages/@{id}.css" overwrite="false" encoding="UTF-8">
+						<copy file="${templates}pages/page.less" tofile="${app}pages/@{id}.less" overwrite="false" encoding="UTF-8">
 							<filterchain>
 								<replacetokens>
 									<token key="name" value="@{id}" />
@@ -262,7 +262,7 @@
 								</replacetokens>
 							</filterchain>
 						</copy>
-						<copy file="${templates}pops/pop.css" tofile="${app}pops/@{id}.css" overwrite="false" encoding="UTF-8">
+						<copy file="${templates}pops/pop.less" tofile="${app}pops/@{id}.less" overwrite="false" encoding="UTF-8">
 							<filterchain>
 								<replacetokens>
 									<token key="name" value="@{id}" />
