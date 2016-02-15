@@ -1,32 +1,32 @@
-define([], function() {
-    var view = Athena.Page.extend({
-        className : "pop",
-        $main : null,
-        $bg : null,
 
-        events : {
-            "click .pop-bg" : "closeHandler",
-            "click .close" : "closeHandler"
-        },
+var view = Athena.Page.extend({
+    className : "pop",
+    $main : null,
+    $bg : null,
 
-        init : function() {
-            view.__super__.init.apply(this);
+    events : {
+        "click .pop-bg" : "closeHandler",
+        "click .close" : "closeHandler"
+    },
 
-            this.$main = this.$el.find(".pop-main");
-            this.$bg = this.$el.find(".pop-bg");
-        },
+    init : function() {
+        view.__super__.init.apply(this);
 
-        resize : function() {
-            this.$el.width(Athena.stageRect().width);
-            this.$el.height(Athena.stageRect().height);
+        this.$main = this.$el.find(".pop-main");
+        this.$bg = this.$el.find(".pop-bg");
+    },
 
-            view.__super__.resize.apply(this);
-        },
+    resize : function() {
+        this.$el.width(Athena.stageRect().width);
+        this.$el.height(Athena.stageRect().height);
 
-        closeHandler : function() {
-            Athena.pageOff(this.data);
-        }
+        view.__super__.resize.apply(this);
+    },
 
-    });
-    return view;
+    closeHandler : function() {
+        Athena.pageOff(this.data);
+    }
+
 });
+
+module.exports = view;

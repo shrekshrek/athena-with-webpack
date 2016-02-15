@@ -1,4 +1,4 @@
-module.exports = {
+var tracker = {
     PAGE: "page",
     EVENT: "event",
 
@@ -20,3 +20,6 @@ module.exports = {
     }
 
 };
+
+module.exports = tracker;
+

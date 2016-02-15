@@ -1,3 +1,4 @@
+
 require('./@name@.less');
 
 var view = Athena.Page.extend({
@@ -31,11 +32,11 @@ var view = Athena.Page.extend({
     transitionIn: function () {
         var _self = this;
         view.__super__.transitionIn.apply(this);
-        this.$el.css({
-            visibility: 'visible'
-        });
         JT.to(this.$el, 0.5, {
             opacity: 1,
+            onStart: function () {
+                this.target.style.visibility = 'visible';
+            },
             onEnd: function () {
                 _self.transitionInComplete();
             }
@@ -48,9 +49,7 @@ var view = Athena.Page.extend({
         JT.to(this.$el, 0.5, {
             opacity: 0,
             onEnd: function () {
-                _self.$el.css({
-                    visibility: 'hidden'
-                });
+                this.target.style.visibility = 'hidden';
                 _self.transitionOutComplete();
             }
         });

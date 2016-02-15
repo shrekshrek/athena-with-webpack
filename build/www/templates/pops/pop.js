@@ -1,53 +1,56 @@
-define(['./@name@.html', './@name@.css', './basePop', 'map', 'model', 'router'], function(html, css, BasePop, SiteMap, SiteModel, SiteRouter) {
-    var view = BasePop.extend({
-        id : "@name@-pop",
 
-        init : function() {
-            this.template = html.html || html;
-            this.render();
-            view.__super__.init.apply(this);
-            var _self = this;
+require('./@name@.less');
+require('./basePop.js');
 
-            this.$el.css({
-                opacity : 0,
-                visibility : 'hidden'
-            });
-        },
+var view = BasePop.extend({
+    id : "@name@-pop",
 
-        resize : function() {
-            view.__super__.resize.apply(this);
-        },
+    init : function() {
+        this.template = require('./@name@.html');
+        this.render();
+        view.__super__.init.apply(this);
+        var _self = this;
 
-        transitionIn : function() {
-            var _self = this;
-            view.__super__.transitionIn.apply(this);
-            this.$el.css({
-                visibility : 'visible'
-            });
-            JT.to(this.$el, 0.3, {
-                opacity : 1,
-                onEnd : function() {
-                    _self.transitionInComplete();
-                }
-            });
-        },
+        this.$el.css({
+            opacity : 0,
+            visibility : 'hidden'
+        });
+    },
 
-        transitionOut : function() {
-            var _self = this;
-            view.__super__.transitionOut.apply(this);
-            JT.to(this.$el, 0.3, {
-                opacity : 0,
-                visibility : 'hidden',
-                onEnd : function() {
-                    _self.transitionOutComplete();
-                }
-            });
-        },
+    resize : function() {
+        view.__super__.resize.apply(this);
+    },
 
-        closeHandler : function() {
-            view.__super__.closeHandler.apply(this);
-        }
+    transitionIn : function() {
+        var _self = this;
+        view.__super__.transitionIn.apply(this);
+        JT.to(this.$el, 0.3, {
+            opacity: 1,
+            onStart: function () {
+                this.target.style.visibility = 'visible';
+            },
+            onEnd: function () {
+                _self.transitionInComplete();
+            }
+        });
+    },
 
-    });
-    return view;
+    transitionOut : function() {
+        var _self = this;
+        view.__super__.transitionOut.apply(this);
+        JT.to(this.$el, 0.3, {
+            opacity : 0,
+            visibility : 'hidden',
+            onEnd : function() {
+                _self.transitionOutComplete();
+            }
+        });
+    },
+
+    closeHandler : function() {
+        view.__super__.closeHandler.apply(this);
+    }
+
 });
+
+module.exports = view;
