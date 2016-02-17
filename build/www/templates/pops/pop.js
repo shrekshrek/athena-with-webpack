@@ -1,6 +1,6 @@
 
 require('./@name@.less');
-require('./basePop.js');
+var BasePop = require('./basePop.js');
 
 var view = BasePop.extend({
     id : "@name@-pop",
@@ -40,8 +40,8 @@ var view = BasePop.extend({
         view.__super__.transitionOut.apply(this);
         JT.to(this.$el, 0.3, {
             opacity : 0,
-            visibility : 'hidden',
             onEnd : function() {
+                this.target.style.visibility = 'hidden';
                 _self.transitionOutComplete();
             }
         });
