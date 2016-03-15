@@ -1,6 +1,5 @@
 
 require('./@name@.less');
-var BasePop = require('./basePop.js');
 
 var view = BasePop.extend({
     id : "@name@-pop",
@@ -9,12 +8,12 @@ var view = BasePop.extend({
         this.template = require('./@name@.html');
         this.render();
         view.__super__.init.apply(this);
-        var _self = this;
 
-        this.$el.css({
-            opacity : 0,
-            visibility : 'hidden'
-        });
+        //以上三行代码是将模板加入场景,一般需要保留不用删除
+    },
+
+    destroy : function() {
+        view.__super__.destroy.apply(this);
     },
 
     resize : function() {
@@ -22,33 +21,27 @@ var view = BasePop.extend({
     },
 
     transitionIn : function() {
-        var _self = this;
         view.__super__.transitionIn.apply(this);
-        JT.to(this.$el, 0.3, {
-            opacity: 1,
-            onStart: function () {
-                this.target.style.visibility = 'visible';
-            },
-            onEnd: function () {
-                _self.transitionInComplete();
-            }
-        });
+
+        //进场方式沿用了basePage中定义的统一方式,如果需要修改可以修改继承自Athena.Page,具体实现可以参考basePage
+    },
+
+    transitionInComplete: function(){
+        view.__super__.transitionInComplete.apply(this);
+
+        //coding here
     },
 
     transitionOut : function() {
-        var _self = this;
         view.__super__.transitionOut.apply(this);
-        JT.to(this.$el, 0.3, {
-            opacity : 0,
-            onEnd : function() {
-                this.target.style.visibility = 'hidden';
-                _self.transitionOutComplete();
-            }
-        });
+
+        //coding here
     },
 
-    closeHandler : function() {
-        view.__super__.closeHandler.apply(this);
+    transitionOutComplete : function() {
+        view.__super__.transitionOutComplete.apply(this);
+
+        //coding here
     }
 
 });

@@ -5,24 +5,27 @@ var view = Athena.Page.extend({
 
     init : function() {
         view.__super__.init.apply(this);
-        var _self = this;
 
         this.$bar = this.$('#loading-bar');
     },
 
     resize : function() {
         view.__super__.resize.apply(this);
+
+        this.$el.width(Athena.stageRect().width);
+        this.$el.height(Athena.stageRect().height);
     },
 
     transitionIn : function() {
-        var _self = this;
         view.__super__.transitionIn.apply(this);
-        JT.to(this.$el, 0.5, {
-            opacity: 1,
+
+        var _self = this;
+        JT.to(this.$el, 0.3, {
+            opacity : 1,
             onStart: function () {
                 this.target.style.visibility = 'visible';
             },
-            onEnd: function () {
+            onEnd : function() {
                 _self.transitionInComplete();
             }
         });
@@ -34,9 +37,10 @@ var view = Athena.Page.extend({
     },
 
     transitionOut : function() {
-        var _self = this;
         view.__super__.transitionOut.apply(this);
-        JT.to(this.$el, 0.5, {
+
+        var _self = this;
+        JT.to(this.$el, 0.3, {
             opacity : 0,
             onEnd : function() {
                 this.target.style.visibility = 'hidden';

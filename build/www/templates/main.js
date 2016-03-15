@@ -6,6 +6,9 @@ require('map');
 require('model');
 require('router');
 
+require('page');
+require('pop');
+
 $(function() {
     Athena.init();
     Athena.fullScreen(true);

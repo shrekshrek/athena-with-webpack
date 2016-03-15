@@ -9,7 +9,6 @@ var view = Athena.Page.extend({
         this.template = require('./@name@.html');
         this.render();
         view.__super__.init.apply(this);
-        var _self = this;
 
         this.$el.css({
             opacity : 0,
@@ -31,31 +30,39 @@ var view = Athena.Page.extend({
     },
 
     transitionIn : function() {
-        var _self = this;
         view.__super__.transitionIn.apply(this);
-        this.$el.css({
-            visibility : 'visible'
-        });
+
+        var _self = this;
         JT.to(this.$el, 0.5, {
-            opacity : 1,
-            onEnd : function() {
+            opacity: 1,
+            onStart: function () {
+                this.target.style.visibility = 'visible';
+            },
+            onEnd: function () {
                 _self.transitionInComplete();
             }
         });
     },
 
+    transitionInComplete: function(){
+        view.__super__.transitionInComplete.apply(this);
+    },
+
     transitionOut : function() {
-        var _self = this;
         view.__super__.transitionOut.apply(this);
+
+        var _self = this;
         JT.to(this.$el, 0.5, {
-            opacity : 0,
-            onEnd : function() {
-                _self.$el.css({
-                    visibility : 'hidden'
-                });
+            opacity: 0,
+            onEnd: function () {
+                this.target.style.visibility = 'hidden';
                 _self.transitionOutComplete();
             }
         });
+    },
+
+    transitionOutComplete : function() {
+        view.__super__.transitionOutComplete.apply(this);
     }
 
 });

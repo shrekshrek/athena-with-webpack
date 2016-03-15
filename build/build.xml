@@ -251,6 +251,9 @@
 				</call>
 			</xmltask>
 
+			<copy file="${templates}pages/basePage.js" tofile="${app}pages/basePage.js" overwrite="false" encoding="UTF-8">
+			</copy>
+
 			<xmltask source="${sitexml}">
 				<call path="//pop">
 					<param name="id" path="@id" />

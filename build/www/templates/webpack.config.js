@@ -24,6 +24,9 @@ module.exports = {
             router: 'app/base/router.js',
             fixloader: 'app/base/fixloader.js',
 
+            page: 'app/pages/basePage.js',
+            pop: 'app/pops/basePop.js',
+
             athena: 'libs/athena/athena.js',
             //jquery: 'libs/jquery/jquery-2.1.3.min.js',
             jquery: 'libs/zepto/zepto.min.js',
@@ -57,7 +60,8 @@ module.exports = {
             Map: 'map',
             Model: 'model',
             Router: 'router',
-
+            BasePage: 'page',
+            BasePop: 'pop',
         })
     ]
 };

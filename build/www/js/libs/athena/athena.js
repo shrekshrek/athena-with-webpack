@@ -1,6 +1,6 @@
 /*!
- * VERSION: 1.5.0
- * DATE: 2016-01-15
+ * VERSION: 2.0.0
+ * DATE: 2016-03-15
  * GIT:https://github.com/shrekshrek/athena-with-webpack
  *
  * @author: Shrek.wang, shrekshrek@gmail.com
@@ -99,7 +99,7 @@
     });
 
     // -------------------------------------------------------------------- 框架主控制器逻辑
-    var $body, $stage, $window, $document;
+    var $stage, $window, $document;
     var preloadFast = false;
     var defaultFlow = Athena.NORMAL;
     var isFullScreen = false;
@@ -548,7 +548,6 @@
     Bone.extend(Athena, {
         init: function (stage) {
             $stage = stage || $("body");
-            $body = $("body");
             $window = $(window);
             $document = $(document);
 
@@ -668,7 +667,7 @@
             if (rect) {
                 windowRectMin.width = rect.width || windowRectMin.width;
                 windowRectMin.height = rect.height || windowRectMin.height;
-                $stage.css({'min-width': windowRectMin.width, 'min-height': windowRectMin.height});
+                //$stage.css({'min-width': windowRectMin.width, 'min-height': windowRectMin.height});
             }
             return windowRectMin;
         },
@@ -699,11 +698,29 @@
             windowRect.height = $window.height();
 
             if (isFullScreen) {
-                $stage.css({width: windowRect.width, height: windowRect.height});
+                if (windowRect.width < windowRectMin.width) {
+                    $stage.css("overflow-x", "auto");
+                } else {
+                    $stage.css("overflow-x", "hidden");
+                }
+                if (windowRect.height < windowRectMin.height) {
+                    $stage.css("overflow-y", "auto");
+                } else {
+                    $stage.css("overflow-y", "hidden");
+                }
+                windowRect.width = $window.width();
+                windowRect.height = $window.height();
+                stageRect.width = Math.max(windowRect.width, windowRectMin.width);
+                stageRect.height = Math.max(windowRect.height, windowRectMin.height);
+                $stage.width(stageRect.width);
+                $stage.height(stageRect.height);
+            }else{
+                $stage.css("overflow", "auto");
+                windowRect.width = $window.width();
+                windowRect.height = $window.height();
+                stageRect.width = $document.width();
+                stageRect.height = $document.height();
             }
-
-            stageRect.width = $stage.width();
-            stageRect.height = $stage.height();
 
             Athena.trigger(Athena.WINDOW_RESIZE);
         }

@@ -1,58 +1,47 @@
 
 require('./@name@.less');
 
-var view = Athena.Page.extend({
+var view = BasePage.extend({
     id: '@name@-page',
-    className: 'page',
 
     init: function () {
         this.template = require('./@name@.html');
         this.render();
         view.__super__.init.apply(this);
 
-        this.$el.css({
-            opacity: 0,
-            visibility: 'hidden'
-        });
+        //以上三行代码是将模板加入场景,一般需要保留不用删除
     },
 
-    events: {},
-
-    destroy: function () {
+    destroy : function() {
         view.__super__.destroy.apply(this);
     },
 
-    resize: function () {
+    resize : function() {
         view.__super__.resize.apply(this);
-
-        this.$el.width(Athena.stageRect().width);
-        this.$el.height(Athena.stageRect().height);
     },
 
-    transitionIn: function () {
-        var _self = this;
+    transitionIn : function() {
         view.__super__.transitionIn.apply(this);
-        JT.to(this.$el, 0.5, {
-            opacity: 1,
-            onStart: function () {
-                this.target.style.visibility = 'visible';
-            },
-            onEnd: function () {
-                _self.transitionInComplete();
-            }
-        });
+
+        //进场方式沿用了basePage中定义的统一方式,如果需要修改可以修改继承自Athena.Page,具体实现可以参考basePage
     },
 
-    transitionOut: function () {
-        var _self = this;
+    transitionInComplete: function(){
+        view.__super__.transitionInComplete.apply(this);
+
+        //coding here
+    },
+
+    transitionOut : function() {
         view.__super__.transitionOut.apply(this);
-        JT.to(this.$el, 0.5, {
-            opacity: 0,
-            onEnd: function () {
-                this.target.style.visibility = 'hidden';
-                _self.transitionOutComplete();
-            }
-        });
+
+        //coding here
+    },
+
+    transitionOutComplete : function() {
+        view.__super__.transitionOutComplete.apply(this);
+
+        //coding here
     }
 
 });

@@ -5,11 +5,11 @@ var view = Athena.Page.extend({
     id : '@name@',
     className : 'pop',
     $bar : null,
+
     init : function() {
         this.template = require('./@name@.html');
         this.render();
         view.__super__.init.apply(this);
-        var _self = this;
 
         this.$bar = this.$('#loading-bar');
 
@@ -21,17 +21,21 @@ var view = Athena.Page.extend({
 
     resize : function() {
         view.__super__.resize.apply(this);
+
+        this.$el.width(Athena.stageRect().width);
+        this.$el.height(Athena.stageRect().height);
     },
 
     transitionIn : function() {
-        var _self = this;
         view.__super__.transitionIn.apply(this);
-        JT.to(this.$el, 0.5, {
-            opacity: 1,
+
+        var _self = this;
+        JT.to(this.$el, 0.3, {
+            opacity : 1,
             onStart: function () {
                 this.target.style.visibility = 'visible';
             },
-            onEnd: function () {
+            onEnd : function() {
                 _self.transitionInComplete();
             }
         });
@@ -43,9 +47,10 @@ var view = Athena.Page.extend({
     },
 
     transitionOut : function() {
-        var _self = this;
         view.__super__.transitionOut.apply(this);
-        JT.to(this.$el, 0.5, {
+
+        var _self = this;
+        JT.to(this.$el, 0.3, {
             opacity : 0,
             onEnd : function() {
                 this.target.style.visibility = 'hidden';
@@ -58,6 +63,7 @@ var view = Athena.Page.extend({
         this.trigger(Athena.TRANSITION_OUT_COMPLETE, {
             data : this.data
         });
+        //此处因为loader不用自动删除,所以此处不用调用超类方法
     },
 
     progress : function(obj) {
@@ -67,6 +73,7 @@ var view = Athena.Page.extend({
             left : (1 - _n) * 0.5 * 100 + '%'
         });
     }
+
 });
 
 module.exports = view;
