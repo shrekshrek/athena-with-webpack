@@ -1,6 +1,6 @@
 /*!
- * VERSION: 0.4.0
- * DATE: 2016-1-16
+ * VERSION: 0.5.0
+ * DATE: 2016-2-21
  * GIT:https://github.com/shrekshrek/jstween
  *
  * @author: Shrek.wang, shrekshrek@gmail.com
@@ -54,11 +54,9 @@
 
 
     // --------------------------------------------------------------------time fix
-    if (!Date.now) {
-        Date.now = function now() {
-            return new Date().getTime();
-        };
-    }
+    Date.now = (Date.now || function () {
+        return new Date().getTime();
+    });
 
     var nowOffset = Date.now();
 
@@ -122,18 +120,38 @@
         return undefined;
     }
 
-    function calcValue(value, value2) {
-        if (typeof(value2) === 'string') {
-            var _s = value2.substr(0, 2);
-            var _n = parseFloat(value2.substr(2));
-            switch (_s) {
-                case '+=':
-                    value2 = value + _n;
-                    break;
-                case '-=':
-                    value2 = value - _n;
-                    break;
+    function checkValue(value, value2, value3, push) {
+        if (value2 instanceof Array) {
+            for (var i in value2) {
+                value2[i] = calcValue(value, value2[i]);
             }
+            if (value3 != undefined) {
+                if (push) {
+                    value2.push(value3);
+                } else {
+                    value2.unshift(value3);
+                }
+            }
+        } else {
+            value2 = calcValue(value, value2);
+        }
+        return value2;
+    }
+
+    function calcValue(value, value2) {
+        switch (typeof(value2)) {
+            case 'string':
+                var _s = value2.substr(0, 2);
+                var _n = parseFloat(value2.substr(2));
+                switch (_s) {
+                    case '+=':
+                        value2 = value + _n;
+                        break;
+                    case '-=':
+                        value2 = value - _n;
+                        break;
+                }
+                break;
         }
         return value2;
     }
@@ -264,6 +282,7 @@
     extend(tween.prototype, {
         initialize: function (target, time, fromVars, toVars, isDom) {
             this.fromVars = fromVars;
+            this.curVars = {};
             this.toVars = toVars;
             this.target = target;
             this.duration = Math.max(time, 0) * 1000;
@@ -281,6 +300,7 @@
             this.onUpdate = toVars.onUpdate || null;
             this.onUpdateParams = toVars.onUpdateParams || [];
             this.isPlaying = toVars.isPlaying || true;
+            this.interpolation = toVars.interpolation || null;
 
             this.isReverse = false;
             this.isDom = isDom;
@@ -360,8 +380,16 @@
                 var _start = this.fromVars[prop];
                 var _end = this.toVars[prop] || 0;
 
-                var _n = _start + ( _end - _start ) * _radio;
+                var _n;
+                if (_end instanceof Array) {
+                    _n = this.interpolation(_end, _radio);
+                } else if (_start instanceof Array) {
+                    _n = this.interpolation(_start, _radio);
+                } else {
+                    _n = _start + ( _end - _start ) * _radio;
+                }
                 _n = Math.round(_n * 100) / 100;
+                this.curVars[prop] = _n;
 
                 if (this.isDom) {
                     if (setProp(this.target, prop, _n)) _trans = true;
@@ -426,7 +454,7 @@
                     for (var i in params) {
                         var _name = checkPropName(obj, i);
                         if (_name) {
-                            var _value = calcValue(parseFloat(getProp(obj, _name)), params[i]);
+                            var _value = checkValue(parseFloat(getProp(obj, _name)), params[i]);
                             if (setProp(obj, _name, _value)) _trans = true;
                         }
                     }
@@ -436,13 +464,14 @@
 
                 } else {
                     for (var j in params) {
-                        obj[j] = calcValue(obj[j], params[j]);
+                        obj[j] = checkValue(obj[j], params[j]);
                     }
                 }
             });
         },
 
         fromTo: function (target, time, fromVars, toVars) {
+            checkBezier(toVars);
             var _target = getElement(target);
             var _tweens = [];
             each(_target, function (index, obj) {
@@ -455,8 +484,8 @@
                         var _name = checkPropName(obj, i);
                         if (_name) {
                             var _n = parseFloat(getProp(obj, _name));
-                            _fromVars[_name] = calcValue(_n, fromVars[i]);
-                            _toVars[_name] = calcValue(_n, toVars[i]);
+                            _fromVars[_name] = checkValue(_n, fromVars[i]);
+                            _toVars[_name] = checkValue(_n, toVars[i], _fromVars[_name], false);
                         } else {
                             _toVars[i] = toVars[i];
                         }
@@ -465,8 +494,8 @@
                     for (var i in toVars) {
                         if ((obj[i] !== undefined)) {
                             var _n = parseFloat(obj[i]);
-                            _fromVars[i] = calcValue(_n, fromVars[i]);
-                            _toVars[i] = calcValue(_n, toVars[i]);
+                            _fromVars[i] = checkValue(_n, fromVars[i]);
+                            _toVars[i] = checkValue(_n, toVars[i], _fromVars[i], false);
                         } else {
                             _toVars[i] = toVars[i];
                         }
@@ -485,6 +514,7 @@
         },
 
         from: function (target, time, fromVars) {
+            checkBezier(fromVars);
             var _target = getElement(target);
             var _tweens = [];
             each(_target, function (index, obj) {
@@ -497,7 +527,7 @@
                         var _name = checkPropName(obj, i);
                         if (_name) {
                             var _n = parseFloat(getProp(obj, _name));
-                            _fromVars[_name] = calcValue(_n, fromVars[i]);
+                            _fromVars[_name] = checkValue(_n, fromVars[i], _n, true);
                             _toVars[_name] = _n;
                         } else {
                             _toVars[i] = fromVars[i];
@@ -507,7 +537,7 @@
                     for (var i in fromVars) {
                         if ((obj[i] !== undefined)) {
                             var _n = parseFloat(obj[i]);
-                            _fromVars[i] = calcValue(_n, fromVars[i]);
+                            _fromVars[i] = checkValue(_n, fromVars[i], _n, true);
                             _toVars[i] = _n;
                         } else {
                             _toVars[i] = fromVars[i];
@@ -527,6 +557,7 @@
         },
 
         to: function (target, time, toVars) {
+            checkBezier(toVars);
             var _target = getElement(target);
             var _tweens = [];
             each(_target, function (index, obj) {
@@ -540,7 +571,7 @@
                         if (_name) {
                             var _n = parseFloat(getProp(obj, _name));
                             _fromVars[_name] = _n;
-                            _toVars[_name] = calcValue(_n, toVars[i]);
+                            _toVars[_name] = checkValue(_n, toVars[i], _n, false);
                         } else {
                             _toVars[i] = toVars[i];
                         }
@@ -550,7 +581,7 @@
                         if ((obj[i] !== undefined)) {
                             var _n = parseFloat(obj[i]);
                             _fromVars[i] = _n;
-                            _toVars[i] = calcValue(_n, toVars[i]);
+                            _toVars[i] = checkValue(_n, toVars[i], _n, false);
                         } else {
                             _toVars[i] = toVars[i];
                         }
@@ -760,6 +791,113 @@
             _call[action]();
         }
     }
+
+
+    // --------------------------------------------------------------------bezier
+    extend(JT, {
+        path: function (obj) {
+            checkBezier(obj);
+            var _ease = obj.ease || JT.Linear.None;
+            var _step = obj.step || 1;
+
+            var _radio, _arr = [];
+            for (var i = 0; i <= _step; i++) {
+                _radio = _ease(i / _step);
+                var _o = {};
+                for (var j in obj) {
+                    if (obj[j] instanceof Array) {
+                        _o[j] = obj.interpolation(obj[j], _radio);
+                    }
+                }
+                _arr.push(_o);
+            }
+            return _arr;
+        }
+    });
+
+    function checkBezier(obj) {
+        if (obj.bezier) {
+            sortBezier(obj, obj.bezier);
+            obj.interpolation = Bezier;
+            delete obj.bezier;
+        }
+        if (obj.through) {
+            sortBezier(obj, obj.through);
+            obj.interpolation = Through;
+            delete obj.through;
+        }
+        if (obj.linear) {
+            sortBezier(obj, obj.linear);
+            obj.interpolation = Linear;
+            delete obj.linear;
+        }
+    }
+
+    function sortBezier(target, arr) {
+        for (var i in arr) {
+            for (var j in arr[i]) {
+                if (i == 0) {
+                    target[j] = [arr[i][j]];
+                } else {
+                    target[j].push(arr[i][j]);
+                }
+            }
+        }
+    }
+
+    function Linear(v, k) {
+        var m = v.length - 1, f = m * k, i = Math.floor(f), fn = Utils.Linear;
+        if (k < 0) return fn(v[0], v[1], f);
+        if (k > 1) return fn(v[m], v[m - 1], m - f);
+        return fn(v[i], v[i + 1 > m ? m : i + 1], f - i);
+    }
+
+    function Bezier(v, k) {
+        var b = 0, n = v.length - 1, pw = Math.pow, bn = Utils.Bernstein, i;
+        for (i = 0; i <= n; i++) {
+            b += pw(1 - k, n - i) * pw(k, i) * v[i] * bn(n, i);
+        }
+        return b;
+    }
+
+    function Through(v, k) {
+        var m = v.length - 1, f = m * k, i = Math.floor(f), fn = Utils.Through;
+        if (v[0] === v[m]) {
+            if (k < 0) i = Math.floor(f = m * ( 1 + k ));
+            return fn(v[( i - 1 + m ) % m], v[i], v[( i + 1 ) % m], v[( i + 2 ) % m], f - i);
+        } else {
+            if (k < 0) return v[0] - ( fn(v[0], v[0], v[1], v[1], -f) - v[0] );
+            if (k > 1) return v[m] - ( fn(v[m], v[m], v[m - 1], v[m - 1], f - m) - v[m] );
+            return fn(v[i ? i - 1 : 0], v[i], v[m < i + 1 ? m : i + 1], v[m < i + 2 ? m : i + 2], f - i);
+        }
+    }
+
+    var Utils = {
+        Linear: function (p0, p1, t) {
+            return ( p1 - p0 ) * t + p0;
+        },
+
+        Bernstein: function (n, i) {
+            var fc = Utils.Factorial;
+            return fc(n) / fc(i) / fc(n - i);
+        },
+
+        Factorial: (function () {
+            var a = [1];
+            return function (n) {
+                var s = 1, i;
+                if (a[n]) return a[n];
+                for (i = n; i > 1; i--) s *= i;
+                return a[n] = s;
+            };
+        })(),
+
+        Through: function (p0, p1, p2, p3, t) {
+            var v0 = ( p2 - p0 ) * 0.5, v1 = ( p3 - p1 ) * 0.5, t2 = t * t, t3 = t * t2;
+            return ( 2 * p1 - 2 * p2 + v0 + v1 ) * t3 + ( -3 * p1 + 3 * p2 - 2 * v0 - v1 ) * t2 + v0 * t + p1;
+        }
+    };
+
 
     // --------------------------------------------------------------------缓动选项
     extend(JT, {
