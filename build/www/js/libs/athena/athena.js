@@ -235,6 +235,8 @@
                 this.curIndex = 0;
                 this.curMax = this.curDatas.length;
 
+                Athena.trigger(Athena.FLOW_START, this.curDatas);
+
                 switch (_actionData.action) {
                     case "on":
                         each(this.curDatas, function (index, obj) {
@@ -251,8 +253,6 @@
                         });
                         break;
                 }
-
-                Athena.trigger(Athena.FLOW_START, this.curDatas);
             } else {
                 this.curDatas = null;
                 this.isFlowing = false;
