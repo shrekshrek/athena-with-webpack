@@ -10,7 +10,8 @@ module.exports = {
     output: {
         path: '@path@built',
         publicPath: '@path@built/',
-        filename: "main.js"
+        filename: "[name].js",
+        chunkFilename: "[name].js"
     },
     resolve: {
         alias: {
