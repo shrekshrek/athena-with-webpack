@@ -100,7 +100,6 @@
 
     // -------------------------------------------------------------------- 框架主控制器逻辑
     var $stage, $window, $document;
-    var preloadFast = false;
     var defaultFlow = Athena.NORMAL;
     var isFullScreen = false;
     var stageRect = {
@@ -120,6 +119,18 @@
     var nextPages = {};
     var preloadPages = {};
     var backloadPages = {};
+
+    // -------------------------------------------------------------------- preloader
+    var preloader = null;
+    var preloadFast = false;
+    var preloadMustIn = false;
+
+    function wpPreloaderComplete(view, data) {
+        preloader = new view(data);
+        $stage.append(preloader.el);
+        preloader.init();
+        Athena.trigger(Athena.PRELOAD_PREPARE);
+    }
 
 
     function checkLast(action, data) {
@@ -532,16 +543,42 @@
 
     });
 
-    var preloader = null;
+    var AssetsPreloader = Bone.extend({}, {
+        load: function (obj) {
+            var data = obj.data;
+            var completeHandler = obj.complete;
+            var progressHandler = obj.progress;
 
-    var preloadMustIn = false;
+            var _imgs = [];
+            for (var i = data.length - 1; i >= 0; i--) {
+                if (data[i].src && data[i].src !== '' && data[i].src.substr(0,5) !== 'data:') _imgs.push(data[i].src);
+            }
 
-    function wpPreloaderComplete(view, data) {
-        preloader = new view(data);
-        $stage.append(preloader.el);
-        preloader.init();
-        Athena.trigger(Athena.PRELOAD_PREPARE);
-    }
+            var _loadMax = _imgs.length;
+            var _loaded = 0;
+            if (_loadMax == 0) {
+                completeHandler();
+            } else {
+                each(_imgs, function (index, obj) {
+                    var _image = new Image();
+                    _image.onload = _image.onerror = function () {
+                        complete();
+                    };
+                    _image.src = obj;
+                });
+            }
+
+            function complete() {
+                _loaded++;
+                var _progress = _loaded / _loadMax;
+                progressHandler(_progress);
+                if (_loaded >= _loadMax) {
+                    completeHandler();
+                }
+            }
+        }
+
+    });
 
 
     // -------------------------------------------------------------------- Athena的api
@@ -772,36 +809,18 @@
 
             var _self = this;
 
-            var _imgs0 = this.$el.find("img");
-            var _imgs = [];
-            for (var i = _imgs0.length - 1; i >= 0; i--) {
-                if (_imgs0[i].src && _imgs0[i].src !== '') _imgs.push(_imgs0[i].src);
-            }
-
-            var _loadMax = _imgs.length;
-            var _loaded = 0;
-            if (_loadMax == 0) {
-                this._progress = 1;
-                this.progressHandle();
-                this.completeHandle();
-            } else {
-                each(_imgs, function (index, obj) {
-                    $(new Image()).load(function () {
-                        complete();
-                    }).error(function () {
-                        complete();
-                    }).attr("src", obj);
-                });
-            }
-
-            function complete() {
-                _loaded++;
-                _self._progress = _loaded / _loadMax;
-                _self.progressHandle();
-                if (_loaded >= _loadMax) {
+            AssetsPreloader.load({
+                data:this.$el.find("img"),
+                progress: function(n){
+                    _self._progress = n;
+                    _self.progressHandle();
+                },
+                complete: function(){
+                    _self._progress = 1;
                     _self.completeHandle();
                 }
-            }
+            });
+
         },
         progressHandle: function () {
             this.trigger(Athena.PRELOAD_PROGRESS, this.data);
