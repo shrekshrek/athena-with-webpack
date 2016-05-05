@@ -1,5 +1,5 @@
 /*!
- * VERSION: 2.1.0
+ * VERSION: 2.0.0
  * DATE: 2016-03-15
  * GIT:https://github.com/shrekshrek/athena-with-webpack
  *
@@ -118,7 +118,6 @@
     var curPages = {};
     var nextPages = {};
     var preloadPages = {};
-    var backloadPages = {};
 
     // -------------------------------------------------------------------- preloader
     var preloader = null;
@@ -402,7 +401,8 @@
         load: function (data) {
             var _self = this;
 
-            this.addSelfListener();
+            this.listenTo(Athena, Athena.PRELOAD_PROGRESS, this.progressHandler);
+            this.listenTo(Athena, Athena.PRELOAD_COMPLETE, this.completeHandler);
 
             if (preloader) {
                 if (preloadMustIn) {
@@ -420,16 +420,6 @@
 
         },
 
-        addSelfListener:function(){
-            this.listenTo(Athena, Athena.PRELOAD_PROGRESS, this.progressHandler);
-            this.listenTo(Athena, Athena.PRELOAD_COMPLETE, this.completeHandler);
-        },
-
-        removeSelfListener:function(){
-            this.stopListening(Athena, Athena.PRELOAD_PROGRESS, this.progressHandler);
-            this.stopListening(Athena, Athena.PRELOAD_COMPLETE, this.completeHandler);
-        },
-
         progressHandler: function(n){
             if(preloader) preloader.progress(n);
         },
@@ -437,16 +427,16 @@
         completeHandler: function(){
             if(preloader) preloader.transitionOut();
             each(this.curDatas, function (i, obj) {
-                var _page = preloadPages[obj.depth];
+                var _page = preloadPages[obj.id];
                 nextPages[obj.depth] = _page;
-                delete preloadPages[obj.depth];
+                delete preloadPages[obj.id];
                 $stage.append(_page.el);
                 _page.init();
             });
 
-            PreloadCtrler.removeSelfListener();
-            PreloadCtrler.trigger(Athena.PRELOAD_COMPLETE);
-
+            this.stopListening(Athena, Athena.PRELOAD_PROGRESS, this.progressHandler);
+            this.stopListening(Athena, Athena.PRELOAD_COMPLETE, this.completeHandler);
+            this.trigger(Athena.PRELOAD_COMPLETE);
         },
 
         preload: function (data) {
@@ -455,11 +445,11 @@
             var _self = this;
 
             each(data, function (i, obj) {
-                var _depth = obj.depth;
-                if (preloadPages[_depth] == undefined) {
+                var _id = obj.id;
+                if (preloadPages[_id] == undefined) {
                     fixloader({data: obj}, function(view, data){
                         var _page = new view(data);
-                        preloadPages[data.data.depth] = _page;
+                        preloadPages[data.data.id] = _page;
                         _self.complete();
                     });
                 }else{
@@ -473,8 +463,8 @@
             var _loadMax = 0;
 
             each(this.curDatas, function (i, obj) {
-                var _depth = obj.depth;
-                if (preloadPages[_depth] != undefined) _loaded++;
+                var _id = obj.id;
+                if (preloadPages[_id] != undefined) _loaded++;
                 _loadMax++;
             });
 
@@ -486,6 +476,9 @@
         }
 
     });
+
+    PreloadCtrler.progressHandler = PreloadCtrler.progressHandler.bind(PreloadCtrler);
+    PreloadCtrler.completeHandler = PreloadCtrler.completeHandler.bind(PreloadCtrler);
 
     // -------------------------------------------------------------------- Athena的api
     Bone.extend(Athena, {
@@ -558,7 +551,7 @@
         },
 
         getPage: function (data) {
-            var _pages = [nextPages, curPages, preloadPages, backloadPages];
+            var _pages = [nextPages, curPages];
             for (var i in _pages) {
                 for (var j in _pages[i]) {
                     if (_pages[i][j].data === data) {
@@ -570,7 +563,7 @@
 
         getPageAt: function (depth) {
             var _depth = depth ? checkDepth(depth) : defaultDepths[2];
-            return nextPages[_depth] || curPages[_depth] || preloadPages[_depth] || backloadPages[_depth];
+            return nextPages[_depth] || curPages[_depth];
         },
 
         fullScreen: function (bool) {
