@@ -1,6 +1,6 @@
 /*!
- * VERSION: 2.0.0
- * DATE: 2016-03-15
+ * VERSION: 2.1.0
+ * DATE: 2016-05-05
  * GIT:https://github.com/shrekshrek/athena-with-webpack
  *
  * @author: Shrek.wang, shrekshrek@gmail.com
