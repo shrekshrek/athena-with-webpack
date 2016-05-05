@@ -1,5 +1,5 @@
 /*!
- * VERSION: 2.0.0
+ * VERSION: 2.1.0
  * DATE: 2016-03-15
  * GIT:https://github.com/shrekshrek/athena-with-webpack
  *
@@ -122,7 +122,6 @@
 
     // -------------------------------------------------------------------- preloader
     var preloader = null;
-    var preloadFast = false;
     var preloadMustIn = false;
 
     function wpPreloaderComplete(view, data) {
@@ -137,7 +136,7 @@
         var _isSame = false;
         if (FlowCtrler.actionQueue.length) {
             var _last = FlowCtrler.actionQueue[FlowCtrler.actionQueue.length - 1];
-            each(data, function (index, obj) {
+            each(data, function (i, obj) {
                 if (_last.action == action && _last.data == obj) {
                     _isSame = true;
                 }
@@ -150,7 +149,7 @@
         if (!data) throw "page data is undefined!";
 
         var _datas = [];
-        each(data, function (index, obj) {
+        each(data, function (i, obj) {
             if (typeof(obj) === 'number') {
                 obj = curPages[obj];
             } else if (typeof(obj) === 'string') {
@@ -198,6 +197,9 @@
                         break;
                     case Athena.BOTTOM :
                         _depth = defaultDepths[3];
+                        break;
+                    default:
+                        _depth = defaultDepths[2];
                         break;
                 }
 
@@ -250,12 +252,12 @@
 
                 switch (_actionData.action) {
                     case "on":
-                        each(this.curDatas, function (index, obj) {
+                        each(this.curDatas, function (i, obj) {
                             FlowCtrler.flowIn(obj);
                         });
                         break;
                     case "off":
-                        each(this.curDatas, function (index, obj) {
+                        each(this.curDatas, function (i, obj) {
                             var _page = curPages[obj.depth];
                             _self.listenToOnce(_page, Athena.TRANSITION_OUT_COMPLETE, function () {
                                 FlowCtrler.flowOutComplete(obj);
@@ -291,7 +293,7 @@
                     if (this.curIndex >= this.curMax) {
                         this.curIndex = 0;
                         this.listenToOnce(PreloadCtrler, Athena.PRELOAD_COMPLETE, function () {
-                            each(this.curDatas, function (index, obj) {
+                            each(this.curDatas, function (i, obj) {
                                 FlowCtrler.flowInComplete(obj);
                             });
                         });
@@ -311,7 +313,7 @@
                     if (this.curIndex >= this.curMax) {
                         this.curIndex = 0;
                         this.listenToOnce(PreloadCtrler, Athena.PRELOAD_COMPLETE, function () {
-                            each(this.curDatas, function (index, obj) {
+                            each(this.curDatas, function (i, obj) {
                                 FlowCtrler.flowOut(obj);
                             });
                         });
@@ -396,15 +398,12 @@
 
     var PreloadCtrler = Bone.extend({}, Bone.Events, {
         curDatas: null,
-        curIndex: 0,
-        curMax: 0,
 
         load: function (data) {
-            this.curDatas = data;
-            this.curIndex = 0;
-            this.curMax = this.curDatas.length;
-
             var _self = this;
+
+            this.addSelfListener();
+
             if (preloader) {
                 if (preloadMustIn) {
                     this.listenToOnce(preloader, Athena.TRANSITION_IN_COMPLETE, function () {
@@ -418,168 +417,75 @@
             } else {
                 this.preload(data);
             }
+
+        },
+
+        addSelfListener:function(){
+            this.listenTo(Athena, Athena.PRELOAD_PROGRESS, this.progressHandler);
+            this.listenTo(Athena, Athena.PRELOAD_COMPLETE, this.completeHandler);
+        },
+
+        removeSelfListener:function(){
+            this.stopListening(Athena, Athena.PRELOAD_PROGRESS, this.progressHandler);
+            this.stopListening(Athena, Athena.PRELOAD_COMPLETE, this.completeHandler);
+        },
+
+        progressHandler: function(n){
+            if(preloader) preloader.progress(n);
+        },
+
+        completeHandler: function(){
+            if(preloader) preloader.transitionOut();
+            each(this.curDatas, function (i, obj) {
+                var _page = preloadPages[obj.depth];
+                nextPages[obj.depth] = _page;
+                delete preloadPages[obj.depth];
+                $stage.append(_page.el);
+                _page.init();
+            });
+
+            PreloadCtrler.removeSelfListener();
+            PreloadCtrler.trigger(Athena.PRELOAD_COMPLETE);
+
         },
 
         preload: function (data) {
-            var _self = this;
-            each(data, function (index, obj) {
-                var _depth = obj.depth;
-                if (backloadPages[_depth] != undefined) {
-                    BackloadCtrler.clearListener(obj);
-                    var _page = backloadPages[_depth];
-                    preloadPages[_depth] = _page;
-                    delete backloadPages[_depth];
-                    if (_page._progress != 1) {
-                        _self.initListener(obj);
-                    } else {
-                        _self.complete(obj);
-                    }
-                } else {
-                    fixloader({data: obj}, _self.wpPageComplete);
-                }
-            });
-        },
-
-        wpPageComplete: function (view, data) {
-            var _page = new view(data);
-            var _data = data.data;
-            preloadPages[_data.depth] = _page;
-            $stage.append(_page.el);
-            _page.init();
-            PreloadCtrler.initListener(_data);
-            _page.preload(preloadFast || _data.fast === "true");
-        },
-
-        initListener: function (data) {
-            var _page = preloadPages[data.depth];
-            this.listenTo(_page, Athena.PRELOAD_PROGRESS, this.progress);
-            this.listenTo(_page, Athena.PRELOAD_COMPLETE, this.complete);
-        },
-
-        clearListener: function (data) {
-            var _page = preloadPages[data.depth];
-            this.stopListening(_page, Athena.PRELOAD_PROGRESS, this.progress);
-            this.stopListening(_page, Athena.PRELOAD_COMPLETE, this.complete);
-        },
-
-        progress: function () {
-            var _self = this;
-            var _n = 0;
-            each(this.curDatas, function (index, obj) {
-                var _page = preloadPages[obj.depth];
-                if (_page) _n += _page._progress / _self.curMax;
-            });
-            if(preloader) preloader.progress({progress: _n});
-        },
-
-        complete: function (data) {
-            this.clearListener(data);
-
-            this.curIndex++;
-            if (this.curIndex >= this.curMax) {
-                if(preloader) preloader.transitionOut();
-
-                each(this.curDatas, function (index, obj) {
-                    nextPages[obj.depth] = preloadPages[obj.depth];
-                    delete preloadPages[obj.depth];
-                });
-
-                this.curDatas = null;
-                this.trigger(Athena.PRELOAD_COMPLETE);
-                Athena.trigger(Athena.PRELOAD_COMPLETE, this.curDatas);
-            }
-        }
-
-    });
-
-    var BackloadCtrler = Bone.extend({}, Bone.Events, {
-        curDatas: null,
-        curIndex: 0,
-        curMax: 0,
-
-        load: function (data) {
-            if(this.curDatas) throw 'backload is loading!!!';
-
             this.curDatas = data;
-            this.curIndex = 0;
-            this.curMax = this.curDatas.length;
 
             var _self = this;
-            each(data, function (index, obj) {
-                fixloader({data: obj}, _self.wpPageComplete);
+
+            each(data, function (i, obj) {
+                var _depth = obj.depth;
+                if (preloadPages[_depth] == undefined) {
+                    fixloader({data: obj}, function(view, data){
+                        var _page = new view(data);
+                        preloadPages[data.data.depth] = _page;
+                        _self.complete();
+                    });
+                }else{
+                    _self.complete();
+                }
             });
         },
 
-        wpPageComplete: function (view, data) {
-            var _page = new view(data);
-            var _data = data.data;
-            backloadPages[_data.depth] = _page;
-            $stage.append(_page.el);
-            _page.init();
-            BackloadCtrler.initListener(_data);
-            _page.preload(preloadFast || _data.fast === "true");
-        },
-
-        initListener: function (data) {
-            var _page = backloadPages[data.depth];
-            this.listenTo(_page, Athena.PRELOAD_COMPLETE, this.complete);
-        },
-
-        clearListener: function (data) {
-            var _page = backloadPages[data.depth];
-            this.stopListening(_page, Athena.PRELOAD_COMPLETE, this.complete);
-        },
-
-        complete: function (data) {
-            this.clearListener(data);
-
-            this.curIndex++;
-            if (this.curIndex >= this.curMax) {
-                this.curDatas = null;
-                this.trigger(Athena.PRELOAD_COMPLETE);
-                Athena.trigger(Athena.BACKLOAD_COMPLETE, this.curDatas);
-            }
-        }
-
-    });
-
-    var AssetsPreloader = Bone.extend({}, {
-        load: function (obj) {
-            var data = obj.data;
-            var completeHandler = obj.complete;
-            var progressHandler = obj.progress;
-
-            var _imgs = [];
-            for (var i = data.length - 1; i >= 0; i--) {
-                if (data[i].src && data[i].src !== '' && data[i].src.substr(0,5) !== 'data:') _imgs.push(data[i].src);
-            }
-
-            var _loadMax = _imgs.length;
+        complete: function () {
             var _loaded = 0;
-            if (_loadMax == 0) {
-                completeHandler();
-            } else {
-                each(_imgs, function (index, obj) {
-                    var _image = new Image();
-                    _image.onload = _image.onerror = function () {
-                        complete();
-                    };
-                    _image.src = obj;
-                });
-            }
+            var _loadMax = 0;
 
-            function complete() {
-                _loaded++;
-                var _progress = _loaded / _loadMax;
-                progressHandler(_progress);
-                if (_loaded >= _loadMax) {
-                    completeHandler();
-                }
+            each(this.curDatas, function (i, obj) {
+                var _depth = obj.depth;
+                if (preloadPages[_depth] != undefined) _loaded++;
+                _loadMax++;
+            });
+
+            Athena.trigger(Athena.PRELOAD_PROGRESS, _loaded/_loadMax);
+
+            if (_loaded >= _loadMax) {
+                Athena.trigger(Athena.PRELOAD_COMPLETE);
             }
         }
 
     });
-
 
     // -------------------------------------------------------------------- Athena的api
     Bone.extend(Athena, {
@@ -600,7 +506,7 @@
 
         preload: function (data) {
             var _data = checkData(data);
-            BackloadCtrler.load(_data);
+            PreloadCtrler.preload(_data);
         },
 
         pageTo: function (data) {
@@ -676,14 +582,6 @@
             return isFullScreen;
         },
 
-        preloadFast: function (bool) {
-            if (bool) {
-                if (typeof(bool) !== 'boolean') throw "preloadFast params must be bool!!!";
-                preloadFast = bool;
-            }
-            return preloadFast;
-        },
-
         preloadMustIn: function (bool) {
             if (bool) {
                 if (typeof(bool) !== 'boolean') throw "preloadMustIn params must be bool!!!";
@@ -704,7 +602,6 @@
             if (rect) {
                 windowRectMin.width = rect.width || windowRectMin.width;
                 windowRectMin.height = rect.height || windowRectMin.height;
-                //$stage.css({'min-width': windowRectMin.width, 'min-height': windowRectMin.height});
             }
             return windowRectMin;
         },
@@ -773,7 +670,6 @@
         template: null,
         initialize: function (options) {
             this.data = options.data;
-            this._progress = 0;
 
             if (options.template) {
                 this.template = options.template;
@@ -798,35 +694,6 @@
         destroy: function () {
             this.data = null;
             this.remove();
-        },
-        preload: function (fast) {
-            this.trigger(Athena.PRELOAD_START, this.data);
-
-            if (fast) {
-                this.completeHandle();
-                return;
-            }
-
-            var _self = this;
-
-            AssetsPreloader.load({
-                data:this.$el.find("img"),
-                progress: function(n){
-                    _self._progress = n;
-                    _self.progressHandle();
-                },
-                complete: function(){
-                    _self._progress = 1;
-                    _self.completeHandle();
-                }
-            });
-
-        },
-        progressHandle: function () {
-            this.trigger(Athena.PRELOAD_PROGRESS, this.data);
-        },
-        completeHandle: function () {
-            this.trigger(Athena.PRELOAD_COMPLETE, this.data);
         },
         transitionIn: function () {
             this.resize();
