@@ -431,13 +431,14 @@ var PreloadCtrler = Bone.extend({}, Bone.Events, {
         each(data, function (i, obj) {
             var _id = obj.id;
             if (preloadPages[_id] == undefined) {
+                preloadPages[_id] = 'p';
                 fixloader({data: obj}, function(view, data){
                     var _page = new view(data);
                     preloadPages[data.data.id] = _page;
                     _self.complete();
                 });
             }else{
-                _self.complete();
+                if(preloadPages[_id] != 'p')  _self.complete();
             }
         });
     },
@@ -448,7 +449,7 @@ var PreloadCtrler = Bone.extend({}, Bone.Events, {
 
         each(this.curDatas, function (i, obj) {
             var _id = obj.id;
-            if (preloadPages[_id] != undefined) _loaded++;
+            if (preloadPages[_id] != undefined && preloadPages[_id] != 'p') _loaded++;
             _loadMax++;
         });
 
