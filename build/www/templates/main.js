@@ -17,7 +17,6 @@ $(function() {
     //    height : 600
     //});
     Athena.flow(Athena.NORMAL);
-    Athena.preloadFast(false);
 
     //没有默认loading时使用以下代码
     //if (SiteMap.preloader) {
