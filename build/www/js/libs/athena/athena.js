@@ -107,14 +107,6 @@ var preloadPages = {};
 var preloader = null;
 var preloadMustIn = false;
 
-function wpPreloaderComplete(view, data) {
-    preloader = new view(data);
-    $stage.append(preloader.el);
-    preloader.init();
-    Athena.trigger(Athena.PRELOAD_PREPARE);
-}
-
-
 function checkLast(action, data) {
     var _isSame = false;
     if (FlowCtrler.actionQueue.length) {
@@ -432,9 +424,9 @@ var PreloadCtrler = Bone.extend({}, Bone.Events, {
             var _id = obj.id;
             if (preloadPages[_id] == undefined) {
                 preloadPages[_id] = 'p';
-                fixloader({data: obj}, function(view, data){
-                    var _page = new view(data);
-                    preloadPages[data.data.id] = _page;
+                fixloader(obj, function(view){
+                    var _page = new view({data:obj});
+                    preloadPages[obj.id] = _page;
                     _self.complete();
                 });
             }else{
@@ -527,7 +519,12 @@ Bone.extend(Athena, {
             var _data = data.data ? data : {data: data};
             _data.data.depth = checkDepth(Athena.PRELOAD);
 
-            fixloader(_data, wpPreloaderComplete);
+            fixloader(_data.data, function(view){
+                preloader = new view(_data);
+                $stage.append(preloader.el);
+                preloader.init();
+                Athena.trigger(Athena.PRELOAD_PREPARE);
+            });
 
             return preloader;
         } else {

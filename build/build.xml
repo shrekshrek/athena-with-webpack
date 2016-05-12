@@ -369,13 +369,13 @@
 			<copy file="${templates}fixloader.js" tofile="${app}base/fixloader.js" overwrite="true" encoding="UTF-8">
 			</copy>
 
-			<add-text file="${app}base/fixloader.js" text="define(function(){${newline}return function(data, callback){${newline}switch(data.data.id){${newline}"/>
+			<add-text file="${app}base/fixloader.js" text="define(function(){${newline}return function(data, callback){${newline}switch(data.id){${newline}"/>
 
 			<xmltask source="${sitexml}">
 				<call path="//preloader">
 					<param name="id" path="@id" />
 					<actions>
-						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/preloader/@{id}'], function() {${newline}var view = require('app/preloader/@{id}');${newline}callback(view, data);${newline}},'preloader/@{id}');${newline}break;${newline}"/>
+						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/preloader/@{id}'], function() {${newline}var view = require('app/preloader/@{id}');${newline}callback(view);${newline}},'preloader/@{id}');${newline}break;${newline}"/>
 					</actions>
 				</call>
 			</xmltask>
@@ -384,7 +384,7 @@
 				<call path="//header">
 					<param name="id" path="@id" />
 					<actions>
-						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/headfoot/@{id}'], function() {${newline}var view = require('app/headfoot/@{id}');${newline}callback(view, data);${newline}},'headfoot/@{id}');${newline}break;${newline}"/>
+						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/headfoot/@{id}'], function() {${newline}var view = require('app/headfoot/@{id}');${newline}callback(view);${newline}},'headfoot/@{id}');${newline}break;${newline}"/>
 					</actions>
 				</call>
 			</xmltask>
@@ -393,7 +393,7 @@
 				<call path="//footer">
 					<param name="id" path="@id" />
 					<actions>
-						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/headfoot/@{id}'], function() {${newline}var view = require('app/headfoot/@{id}');${newline}callback(view, data);${newline}},'headfoot/@{id}');${newline}break;${newline}"/>
+						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/headfoot/@{id}'], function() {${newline}var view = require('app/headfoot/@{id}');${newline}callback(view);${newline}},'headfoot/@{id}');${newline}break;${newline}"/>
 					</actions>
 				</call>
 			</xmltask>
@@ -402,7 +402,7 @@
 				<call path="//page">
 					<param name="id" path="@id" />
 					<actions>
-						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/pages/@{id}'], function() {${newline}var view = require('app/pages/@{id}');${newline}callback(view, data);${newline}},'pages/@{id}');${newline}break;${newline}"/>
+						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/pages/@{id}'], function() {${newline}var view = require('app/pages/@{id}');${newline}callback(view);${newline}},'pages/@{id}');${newline}break;${newline}"/>
 					</actions>
 				</call>
 			</xmltask>
@@ -411,7 +411,7 @@
 				<call path="//pop">
 					<param name="id" path="@id" />
 					<actions>
-						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/pops/@{id}'], function() {${newline}var view = require('app/pops/@{id}');${newline}callback(view, data);${newline}},'pops/@{id}');${newline}break;${newline}"/>
+						<add-text file="${app}base/fixloader.js" text="case '@{id}':${newline}require.ensure(['app/pops/@{id}'], function() {${newline}var view = require('app/pops/@{id}');${newline}callback(view);${newline}},'pops/@{id}');${newline}break;${newline}"/>
 					</actions>
 				</call>
 			</xmltask>
